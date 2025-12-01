@@ -1,0 +1,24 @@
+<div id="notifications" class="position-fixed top-0 end-0 p-3" style="z-index: 1050;"></div>
+
+<script>
+function showNotification(message, type = 'success') {
+  const notifications = document.getElementById('notifications');
+  const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+  
+  const notification = document.createElement('div');
+  notification.className = `alert ${alertClass} alert-dismissible fade show`;
+  notification.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  
+  notifications.appendChild(notification);
+  
+  // Автоматическое скрытие через 5 секунд
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 5000);
+}
+</script>

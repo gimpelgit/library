@@ -1,0 +1,35 @@
+<nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #2c3e50;">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="/">Библиотека</a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <div class="navbar-nav ms-auto">
+        {{#if user}}
+          {{#if (eq user.role_name 'reader')}}
+            <a class="nav-link {{#if (eq page 'my-books')}}active{{/if}}" href="/my-books">Мои книги</a>
+            <a class="nav-link {{#if (eq page 'profile')}}active{{/if}}" href="/profile">Личный кабинет</a>
+          {{/if}}
+          
+          {{#if (eq user.role_name 'librarian')}}
+            <a class="nav-link {{#if (eq page 'librarian-issue')}}active{{/if}}" href="/librarian/issue">Выдача книг</a>
+            <a class="nav-link {{#if (eq page 'librarian-return')}}active{{/if}}" href="/librarian/return">Возврат книг</a>
+            <a class="nav-link {{#if (eq page 'readers')}}active{{/if}}" href="/readers">Читатели</a>
+            <a class="nav-link {{#if (eq page 'suggestions')}}active{{/if}}" href="/suggestions">Предложения</a>
+          {{/if}}
+          
+          <form action="/auth/logout" method="POST" class="nav-item">
+            <button type="submit" class="nav-link btn btn-link text-light text-decoration-none border-0">
+              Выйти ({{user.name}})
+            </button>
+          </form>
+        {{else}}
+          <a class="nav-link {{#if (eq page 'auth')}}active{{/if}}" href="/auth">Войти / Регистрация</a>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</nav>

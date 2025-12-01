@@ -1,0 +1,56 @@
+<div class="container mt-4">
+  <a href="/books" class="btn btn-outline-primary mb-3">← Назад к каталогу</a>
+  
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4 text-center">
+          <div class="mb-3">
+            {{#if book.cover_image_url}}
+              <img src="{{book.cover_image_url}}" class="img-fluid rounded shadow" alt="{{book.title}}" style="max-height: 400px;">
+            {{else}}
+              <img src="/images/covers/default.png" class="img-fluid" alt="{{this.title}}" style="max-height: 400px;">
+            {{/if}}
+          </div>
+        </div>
+        
+        <div class="col-md-8">
+          <h1 class="text-primary mb-3">{{book.title}}</h1>
+          
+          <div class="mb-4">
+            <p class="mb-2"><strong>Авторы:</strong> {{book.authors}}</p>
+            <p class="mb-2"><strong>Жанры:</strong> {{book.genres}}</p>
+            <p class="mb-2"><strong>Количество страниц:</strong> {{book.page_count}}</p>
+            <p class="mb-0">
+              <strong>Доступно экземпляров:</strong> 
+              <span class="{{#if (gt book.quantity 0)}}text-success{{else}}text-danger{{/if}} fw-bold">
+                {{book.quantity}}
+              </span>
+            </p>
+          </div>
+          
+          <div class="mb-4">
+            <h4 class="text-primary">Описание</h4>
+            <p class="lead">{{book.summary}}</p>
+          </div>
+          
+          {{#if user}}
+            {{#if (eq user.role_name 'reader')}}
+              <div class="book-actions">
+                {{#if (gt book.quantity 0)}}
+                  <button class="btn btn-primary btn-lg">Забронировать</button>
+                {{else}}
+                  <button class="btn btn-secondary btn-lg" disabled>Нет в наличии</button>
+                {{/if}}
+              </div>
+            {{/if}}
+          {{else}}
+            <div class="book-actions">
+              <a href="/auth" class="btn btn-primary btn-lg">Войдите для бронирования</a>
+            </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,212 @@
+<div class="container mt-4">
+  <h1 class="mb-4 text-primary">Возврат книг</h1>
+  
+  <!-- Фильтры -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" action="/librarian/return">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">
+            <label for="readerName" class="form-label">Имя читателя:</label>
+            <input type="text" class="form-control" id="readerName" name="readerName" 
+                   value="{{filters.readerName}}" placeholder="Введите имя читателя">
+          </div>
+          
+          <div class="col-md-4">
+            <label for="bookTitle" class="form-label">Название книги:</label>
+            <input type="text" class="form-control" id="bookTitle" name="bookTitle" 
+                   value="{{filters.bookTitle}}" placeholder="Введите название книги">
+          </div>
+          
+          <div class="col-md-4">
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">Применить фильтры</button>
+              <a href="/librarian/return" class="btn btn-outline-secondary">Сбросить</a>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Список выданных книг -->
+  <div class="row g-4 mb-4">
+    {{#each loans}}
+      <div class="col-xl-4 col-lg-6 col-md-6">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h6 class="card-title text-primary">{{this.book_title}}</h6>
+              {{#if this.cover_image_url}}
+                <img src="{{this.cover_image_url}}" class="img-fluid rounded" alt="{{this.book_title}}" 
+                     style="max-height: 80px; max-width: 60px;">
+              {{else}}
+                <img src="/images/covers/default.png" class="img-fluid" alt="{{this.book_title}}"
+                     style="max-height: 80px; max-width: 60px;">
+              {{/if}}
+            </div>
+            
+            <div class="card-text">
+              <p class="mb-1"><small><strong>Авторы:</strong> {{this.authors}}</small></p>
+              <p class="mb-1"><small><strong>Читатель:</strong> {{this.user_name}}</small></p>
+              <p class="mb-1"><small><strong>Email:</strong> {{this.user_email}}</small></p>
+              <p class="mb-1"><small><strong>Дата выдачи:</strong> {{formatDate this.loan_date}}</small></p>
+              <p class="mb-3 {{#if (isOverdue this.return_date)}}text-danger{{/if}}">
+                <small><strong>Дата возврата:</strong> {{formatDate this.return_date}}</small>
+                {{#if (isOverdue this.return_date)}}
+                  <span class="badge bg-danger ms-1">Просрочено</span>
+                {{/if}}
+              </p>
+              
+              <button type="button" class="btn btn-success w-100" 
+                      onclick="openReturnModal({{this.loan_id}}, '{{this.book_title}}', '{{this.user_name}}')">
+                Принять возврат
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {{else}}
+      <div class="col-12">
+        <div class="text-center py-5 text-muted">
+          <p>Нет книг для возврата.</p>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+  
+  <!-- Пагинация -->
+  {{#if (gt totalPages 1)}}
+    <nav>
+      <ul class="pagination justify-content-center">
+        {{#if (gt currentPage 1)}}
+          <li class="page-item">
+            <a class="page-link" href="/librarian/return?page={{sub currentPage 1}}">← Назад</a>
+          </li>
+        {{/if}}
+        
+        {{#each (range 1 totalPages)}}
+          {{#if (eq this ../currentPage)}}
+            <li class="page-item active">
+              <span class="page-link">{{this}}</span>
+            </li>
+          {{else}}
+            <li class="page-item">
+              <a class="page-link" href="/librarian/return?page={{this}}">{{this}}</a>
+            </li>
+          {{/if}}
+        {{/each}}
+        
+        {{#if (lt currentPage totalPages)}}
+          <li class="page-item">
+            <a class="page-link" href="/librarian/return?page={{add currentPage 1}}">Вперед →</a>
+          </li>
+        {{/if}}
+      </ul>
+    </nav>
+  {{/if}}
+</div>
+
+<!-- Модальное окно подтверждения возврата -->
+<div class="modal fade" id="returnModal" tabindex="-1" aria-labelledby="returnModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-primary" id="returnModalLabel">Подтверждение возврата</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Вы действительно хотите принять возврат книги?</p>
+        <div class="return-details p-3 bg-light rounded">
+          <p class="mb-1"><strong>Книга:</strong> <span id="modalBookTitle"></span></p>
+          <p class="mb-1"><strong>Читатель:</strong> <span id="modalReaderName"></span></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-success" id="confirmReturnBtn">Подтвердить возврат</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+  let currentLoanId = null;
+
+  // Сохранение состояния фильтров
+  document.addEventListener('DOMContentLoaded', function() {
+    // Восстановление фильтров из sessionStorage
+    const savedFilters = sessionStorage.getItem('returnFilters');
+    if (savedFilters) {
+      const filters = JSON.parse(savedFilters);
+      document.getElementById('readerName').value = filters.readerName || '';
+      document.getElementById('bookTitle').value = filters.bookTitle || '';
+    }
+  });
+
+  // Сохранение фильтров при изменении
+  document.getElementById('readerName').addEventListener('input', saveFilters);
+  document.getElementById('bookTitle').addEventListener('input', saveFilters);
+
+  function saveFilters() {
+    const filters = {
+      readerName: document.getElementById('readerName').value,
+      bookTitle: document.getElementById('bookTitle').value
+    };
+    sessionStorage.setItem('returnFilters', JSON.stringify(filters));
+  }
+
+  // Очистка фильтров при нажатии на сброс
+  document.querySelector('a[href="/librarian/return"]').addEventListener('click', function(e) {
+    sessionStorage.removeItem('returnFilters');
+  });
+
+  // Открытие модального окна подтверждения
+  function openReturnModal(loanId, bookTitle, readerName) {
+    currentLoanId = loanId;
+    
+    // Заполняем данные в модальном окне
+    document.getElementById('modalBookTitle').textContent = bookTitle;
+    document.getElementById('modalReaderName').textContent = readerName;
+    
+    // Показываем модальное окно
+    const returnModal = new bootstrap.Modal(document.getElementById('returnModal'));
+    returnModal.show();
+  }
+
+  // Обработка подтверждения возврата
+  document.getElementById('confirmReturnBtn').addEventListener('click', async function() {
+    if (!currentLoanId) return;
+    
+    try {
+      const response = await fetch(`/librarian/return/${currentLoanId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Закрываем модальное окно
+        const returnModal = bootstrap.Modal.getInstance(document.getElementById('returnModal'));
+        returnModal.hide();
+        
+        showNotification(result.message, 'success');
+        
+        // Обновляем страницу через 1 секунду для отображения уведомления
+        setTimeout(() => {
+          location.reload();
+        }, 1000);
+      } else {
+        showNotification('Ошибка: ' + result.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Произошла ошибка при обработке возврата', 'error');
+    }
+  });
+</script>
+{{/section}}

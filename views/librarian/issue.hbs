@@ -1,0 +1,367 @@
+<div class="container mt-4">
+  <h1 class="mb-4 text-primary">Выдача книг читателям</h1>
+  
+  <!-- Поиск читателя -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">1. Выбор читателя</h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="readerSearch" class="form-label">Поиск читателя:</label>
+          <input type="text" class="form-control" id="readerSearch" 
+                 placeholder="Введите имя или email читателя">
+          <div id="readerResults" class="mt-2"></div>
+        </div>
+        <div class="col-md-6">
+          <div id="selectedReader" class="p-3 border rounded" style="display: none;">
+            <h6>Выбранный читатель:</h6>
+            <div id="readerInfo"></div>
+            <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearReader()">
+              Отменить выбор
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Фильтры книг -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">2. Выбор книг</h5>
+      <form method="GET" action="/librarian/issue">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label for="title" class="form-label">Название:</label>
+            <input type="text" class="form-control" id="title" name="title" value="{{filters.title}}" 
+                   placeholder="Введите название книги">
+          </div>
+          
+          <div class="col-md-3">
+            <label for="author" class="form-label">Автор:</label>
+            <input type="text" class="form-control" id="author" name="author" value="{{filters.author}}" 
+                   placeholder="Выберите автора" list="authors-list">
+            <datalist id="authors-list">
+              {{#each authors}}
+                <option value="{{this}}">
+              {{/each}}
+            </datalist>
+          </div>
+          
+          <div class="col-md-3">
+            <label for="genre" class="form-label">Жанр:</label>
+            <select class="form-select" id="genre" name="genre">
+              <option value="">Все жанры</option>
+              {{#each genres}}
+                <option value="{{this}}" {{#if (eq this ../filters.genre)}}selected{{/if}}>
+                  {{this}}
+                </option>
+              {{/each}}
+            </select>
+          </div>
+          
+          {{!-- <div class="col-md-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="available" value="true" 
+                     {{#if (eq filters.available 'true')}}checked{{/if}} id="availableCheck">
+              <label class="form-check-label" for="availableCheck">
+                Только доступные
+              </label>
+            </div>
+          </div> --}}
+          
+          <div class="col-md-3">
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">Применить фильтры</button>
+              <a href="/librarian/issue" class="btn btn-outline-secondary">Сбросить</a>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Выбранные книги -->
+  <div class="card shadow-sm mb-4" id="selectedBooksCard" style="display: none;">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Выбранные книги для выдачи</h5>
+      <div id="selectedBooksList" class="mb-3"></div>
+      <div class="row">
+        <div class="col-md-3">
+          <label for="loanDays" class="form-label">Срок выдачи (дней):</label>
+          <input type="number" class="form-control" id="loanDays" value="30" min="1" max="365">
+        </div>
+        <div class="col-md-9 d-flex align-items-end">
+          <button type="button" class="btn btn-success btn-lg" onclick="issueBooks()">
+            Оформить выдачу
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Сетка книг -->
+  <div class="row g-4 mb-4">
+    {{#each books}}
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <div class="card h-100 shadow-sm book-card">
+          <div class="card-body">
+            <div class="text-center mb-3">
+              {{#if this.cover_image_url}}
+                <img src="{{this.cover_image_url}}" class="img-fluid rounded" alt="{{this.title}}" style="max-height: 150px;">
+              {{else}}
+                <img src="/images/covers/default.png" class="img-fluid" alt="{{this.title}}" style="max-height: 150px;">
+              {{/if}}
+            </div>
+            
+            <h6 class="card-title text-primary">{{this.title}}</h6>
+            <div class="card-text">
+              <p class="mb-1"><small><strong>Авторы:</strong> {{this.authors}}</small></p>
+              <p class="mb-1"><small><strong>Жанры:</strong> {{this.genres}}</small></p>
+              <p class="mb-1"><small><strong>Страниц:</strong> {{this.page_count}}</small></p>
+              <p class="mb-3">
+                <small class="{{#if (gt this.quantity 0)}}text-success{{else}}text-danger{{/if}}">
+                  <strong>Доступно:</strong> {{this.quantity}} шт.
+                </small>
+              </p>
+              
+              {{#if (gt this.quantity 0)}}
+                <button type="button" class="btn btn-sm btn-outline-primary w-100" 
+                        onclick="selectBook({{this.id}}, '{{this.title}}', '{{this.authors}}')">
+                  Выбрать для выдачи
+                </button>
+              {{else}}
+                <button class="btn btn-sm btn-secondary w-100" disabled>Недоступно</button>
+              {{/if}}
+            </div>
+          </div>
+        </div>
+      </div>
+    {{else}}
+      <div class="col-12">
+        <div class="text-center py-5 text-muted">
+          <p>Книги не найдены. Попробуйте изменить параметры фильтрации.</p>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+  
+  <!-- Пагинация -->
+  {{#if (gt totalPages 1)}}
+    <nav>
+      <ul class="pagination justify-content-center">
+        {{#if (gt currentPage 1)}}
+          <li class="page-item">
+            <a class="page-link" href="/librarian/issue?page={{sub currentPage 1}}">← Назад</a>
+          </li>
+        {{/if}}
+        
+        {{#each (range 1 totalPages)}}
+          {{#if (eq this ../currentPage)}}
+            <li class="page-item active">
+              <span class="page-link">{{this}}</span>
+            </li>
+          {{else}}
+            <li class="page-item">
+              <a class="page-link" href="/librarian/issue?page={{this}}">{{this}}</a>
+            </li>
+          {{/if}}
+        {{/each}}
+        
+        {{#if (lt currentPage totalPages)}}
+          <li class="page-item">
+            <a class="page-link" href="/librarian/issue?page={{add currentPage 1}}">Вперед →</a>
+          </li>
+        {{/if}}
+      </ul>
+    </nav>
+  {{/if}}
+</div>
+
+{{#section 'scripts'}}
+<script>
+  let selectedReader = null;
+  let selectedBooks = new Map();
+
+  // Сохранение состояния при загрузке страницы
+  document.addEventListener('DOMContentLoaded', function() {
+    // Восстановление выбранного читателя из sessionStorage
+    const savedReader = sessionStorage.getItem('selectedReader');
+    if (savedReader) {
+      selectedReader = JSON.parse(savedReader);
+      updateReaderDisplay();
+    }
+
+    // Восстановление выбранных книг из sessionStorage
+    const savedBooks = sessionStorage.getItem('selectedBooks');
+    if (savedBooks) {
+      const booksArray = JSON.parse(savedBooks);
+      selectedBooks = new Map(booksArray);
+      updateSelectedBooksList();
+    }
+
+    updateIssueButton();
+  });
+
+  // Поиск читателей
+  document.getElementById('readerSearch').addEventListener('input', function(e) {
+    const query = e.target.value.trim();
+    const resultsDiv = document.getElementById('readerResults');
+    
+    if (query.length < 2) {
+      resultsDiv.innerHTML = '';
+      return;
+    }
+    
+    fetch(`/librarian/api/readers?q=${encodeURIComponent(query)}`)
+      .then(response => response.json())
+      .then(readers => {
+        resultsDiv.innerHTML = '';
+        readers.forEach(reader => {
+          const div = document.createElement('div');
+          div.className = 'border p-2 mb-2 rounded cursor-pointer';
+          div.innerHTML = `
+            <strong>${reader.name}</strong><br>
+            <small>${reader.email}</small>
+          `;
+          div.style.cursor = 'pointer';
+          div.onclick = () => selectReader(reader);
+          resultsDiv.appendChild(div);
+        });
+      });
+  });
+
+  function selectReader(reader) {
+    selectedReader = reader;
+    document.getElementById('readerSearch').value = '';
+    document.getElementById('readerResults').innerHTML = '';
+    
+    // Сохраняем в sessionStorage
+    sessionStorage.setItem('selectedReader', JSON.stringify(reader));
+    
+    updateReaderDisplay();
+    updateIssueButton();
+  }
+
+  function updateReaderDisplay() {
+    if (selectedReader) {
+      document.getElementById('readerInfo').innerHTML = `
+        <strong>${selectedReader.name}</strong><br>
+        <small>${selectedReader.email}</small>
+      `;
+      document.getElementById('selectedReader').style.display = 'block';
+    } else {
+      document.getElementById('selectedReader').style.display = 'none';
+    }
+  }
+
+  function clearReader() {
+    selectedReader = null;
+    sessionStorage.removeItem('selectedReader');
+    updateReaderDisplay();
+    updateIssueButton();
+  }
+
+  // Выбор книг
+  function selectBook(bookId, title, authors) {
+    if (selectedBooks.has(bookId)) {
+      selectedBooks.delete(bookId);
+    } else {
+      selectedBooks.set(bookId, { title, authors });
+    }
+    
+    // Сохраняем в sessionStorage
+    sessionStorage.setItem('selectedBooks', JSON.stringify(Array.from(selectedBooks.entries())));
+    
+    updateSelectedBooksList();
+    updateIssueButton();
+  }
+
+  function updateSelectedBooksList() {
+    const listDiv = document.getElementById('selectedBooksList');
+    const card = document.getElementById('selectedBooksCard');
+    
+    if (selectedBooks.size === 0) {
+      card.style.display = 'none';
+      return;
+    }
+    
+    card.style.display = 'block';
+    listDiv.innerHTML = '';
+    
+    selectedBooks.forEach((book, bookId) => {
+      const div = document.createElement('div');
+      div.className = 'd-flex justify-content-between align-items-center border p-2 mb-2 rounded';
+      div.innerHTML = `
+        <div>
+          <strong>${book.title}</strong><br>
+          <small>${book.authors}</small>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger" 
+                onclick="selectBook(${bookId})">Удалить</button>
+      `;
+      listDiv.appendChild(div);
+    });
+  }
+
+  function updateIssueButton() {
+    const canIssue = selectedReader && selectedBooks.size > 0;
+    const issueButton = document.querySelector('button[onclick="issueBooks()"]');
+    if (issueButton) {
+      issueButton.disabled = !canIssue;
+    }
+  }
+
+  // Оформление выдачи
+  async function issueBooks() {
+    if (!selectedReader || selectedBooks.size === 0) return;
+    
+    const loanDays = document.getElementById('loanDays').value || 30;
+    const bookIds = Array.from(selectedBooks.keys());
+    
+    try {
+      const response = await fetch('/librarian/issue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          readerId: selectedReader.id,
+          bookIds: bookIds,
+          loanDays: loanDays
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showNotification(result.message, 'success');
+        // Сброс формы
+        selectedReader = null;
+        selectedBooks.clear();
+        sessionStorage.removeItem('selectedReader');
+        sessionStorage.removeItem('selectedBooks');
+        clearReader();
+        updateSelectedBooksList();
+        updateIssueButton();
+      } else {
+        showNotification('Ошибка: ' + result.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Произошла ошибка при оформлении выдачи', 'error');
+    }
+  }
+
+  // Обработка отправки формы фильтров
+  document.querySelector('form[action="/librarian/issue"]').addEventListener('submit', function(e) {
+    // Сохраняем текущее состояние перед применением фильтров
+    if (selectedReader) {
+      sessionStorage.setItem('selectedReader', JSON.stringify(selectedReader));
+    }
+    if (selectedBooks.size > 0) {
+      sessionStorage.setItem('selectedBooks', JSON.stringify(Array.from(selectedBooks.entries())));
+    }
+  });
+</script>
+{{/section}}

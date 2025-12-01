@@ -1,0 +1,151 @@
+<div class="container mt-4">
+  <h1 class="mb-4 text-primary">Каталог книг</h1>
+  
+  <!-- Фильтры -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form method="GET" action="/books">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-3">
+            <label for="title" class="form-label">Название:</label>
+            <input type="text" class="form-control" id="title" name="title" value="{{filters.title}}" 
+                   placeholder="Введите название книги">
+          </div>
+          
+          <div class="col-md-3">
+            <label for="author" class="form-label">Автор:</label>
+            <input type="text" class="form-control" id="author" name="author" value="{{filters.author}}" 
+                   placeholder="Выберите автора" list="authors-list">
+            <datalist id="authors-list">
+              {{#each authors}}
+                <option value="{{this}}">
+              {{/each}}
+            </datalist>
+          </div>
+          
+          <div class="col-md-2">
+            <label for="genre" class="form-label">Жанр:</label>
+            <select class="form-select" id="genre" name="genre">
+              <option value="">Все жанры</option>
+              {{#each genres}}
+                <option value="{{this}}" {{#if (eq this ../filters.genre)}}selected{{/if}}>
+                  {{this}}
+                </option>
+              {{/each}}
+            </select>
+          </div>
+          
+          <div class="col-md-2">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="available" value="true" 
+                     {{#if (eq filters.available 'true')}}checked{{/if}} id="availableCheck">
+              <label class="form-check-label" for="availableCheck">
+                Только доступные
+              </label>
+            </div>
+          </div>
+          
+          <div class="col-md-2">
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">Применить фильтры</button>
+              <a href="/books" class="btn btn-outline-secondary">Сбросить</a>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Сетка книг -->
+  <div class="row g-4 mb-4">
+    {{#each books}}
+      <div class="col-xl-3 col-lg-4 col-md-6">
+        <div class="card h-100 shadow-sm book-card" onclick="location.href='/books/{{this.id}}'" style="cursor: pointer;">
+          <div class="row g-0 h-100">
+            <div class="col-4">
+              <div class="h-100 d-flex align-items-center justify-content-center bg-light">
+                {{#if this.cover_image_url}}
+                  <img src="{{this.cover_image_url}}" class="img-fluid" alt="{{this.title}}">
+                {{else}}
+                  <img src="/images/covers/default.png" class="img-fluid" alt="{{this.title}}">
+                {{/if}}
+              </div>
+            </div>
+            <div class="col-8">
+              <div class="card-body d-flex flex-column h-100">
+                <h6 class="card-title text-primary">{{this.title}}</h6>
+                <div class="card-text flex-grow-1">
+                  <p class="mb-1"><small><strong>Авторы:</strong> {{this.authors}}</small></p>
+                  <p class="mb-1"><small><strong>Жанры:</strong> {{this.genres}}</small></p>
+                  <p class="mb-1"><small><strong>Страниц:</strong> {{this.page_count}}</small></p>
+                  <p class="mb-0">
+                    <small class="{{#if (gt this.quantity 0)}}text-success{{else}}text-danger{{/if}}">
+                      <strong>Доступно:</strong> {{this.quantity}} шт.
+                    </small>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {{else}}
+      <div class="col-12">
+        <div class="text-center py-5 text-muted">
+          <p>Книги не найдены. Попробуйте изменить параметры фильтрации.</p>
+        </div>
+      </div>
+    {{/each}}
+  </div>
+  
+  <!-- Пагинация -->
+  {{#if (gt totalPages 1)}}
+    <nav>
+      <ul class="pagination justify-content-center">
+        {{#if (gt currentPage 1)}}
+          <li class="page-item">
+            <a class="page-link" href="/books?page={{sub currentPage 1}}">← Назад</a>
+          </li>
+        {{/if}}
+        
+        {{#each (range 1 totalPages)}}
+          {{#if (eq this ../currentPage)}}
+            <li class="page-item active">
+              <span class="page-link">{{this}}</span>
+            </li>
+          {{else}}
+            <li class="page-item">
+              <a class="page-link" href="/books?page={{this}}">{{this}}</a>
+            </li>
+          {{/if}}
+        {{/each}}
+        
+        {{#if (lt currentPage totalPages)}}
+          <li class="page-item">
+            <a class="page-link" href="/books?page={{add currentPage 1}}">Вперед →</a>
+          </li>
+        {{/if}}
+      </ul>
+    </nav>
+  {{/if}}
+</div>
+
+{{#section 'scripts'}}
+  <script>
+    document.getElementById('author').addEventListener('input', function(e) {
+      const input = e.target;
+      const datalist = document.getElementById('authors-list');
+      
+      fetch(`/books/api/authors?q=${encodeURIComponent(input.value)}`)
+        .then(response => response.json())
+        .then(authors => {
+          datalist.innerHTML = '';
+          authors.forEach(author => {
+            const option = document.createElement('option');
+            option.value = author;
+            datalist.appendChild(option);
+          });
+        });
+    });
+  </script>
+{{/section}}
