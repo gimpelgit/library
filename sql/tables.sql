@@ -37,7 +37,7 @@ CREATE TABLE users (
 
 CREATE TABLE authors (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(32) NOT NULL
+    name VARCHAR(64) NOT NULL
 );
 
 CREATE TABLE genres (

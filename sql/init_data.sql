@@ -5,20 +5,20 @@ INSERT INTO suggestion_statuses (name) VALUES ('pending'), ('approved'), ('rejec
 INSERT INTO loan_statuses (name) VALUES ('on_loan'), ('returned');
 
 INSERT INTO users (name, email, password, created_at, role_id) VALUES
-('Алиса Иванова', 'alisa.ivanova@example.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', '2024-01-01 10:00:00', 1), -- password123
-('Борис Смирнов', 'boris.smirnov@example.com', '9878d344400c00f8bab1a4ba1a3488b3ace88aea983e3d94ba1c781e09ba32bb', '2024-02-15 14:30:00', 2), -- securepass456
-('Чарли Браун'  , 'charlie.brown@example.com', '1e7724923bb42b54b5df6bf30e4bd8d9d4699788ea53483694d309f3d6cd5c0e', '2024-03-20 08:45:00', 1), -- mypassword789
+('Иванова Алиса Сергеевна', 'alisa.ivanova@example.com', 'ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f', '2024-01-01 10:00:00', 1), -- password123
+('Смирнов Борис Петрович', 'boris.smirnov@example.com', '9878d344400c00f8bab1a4ba1a3488b3ace88aea983e3d94ba1c781e09ba32bb', '2024-02-15 14:30:00', 2), -- securepass456
+('Чарли Браун'  , 'charlie.brown@example.com', '1e7724923bb42b54b5df6bf30e4bd8d9d4699788ea53483694d309f3d6cd5c0e', '2024-03-20 08:45:00', 2), -- mypassword789
 ('Диана Принс'  , 'diana.prince@example.com' , '888ffe2335650de9dbb3d77179a4799d5adb368a14befd0d5c6abfb8dcfd3d7e', '2024-04-10 12:00:00', 2); -- wonderwoman2024
 
 
 INSERT INTO authors (name)
 VALUES
-('Тимофеева А.Ю.'),
-('Киселев М.В.'),
-('Лев Толстой'),
-('Фёдор Достоевский'),
-('Александр Пушкин'),
-('Дуглас Адамс'),
+('Тимофеева Анастасия Юрьевна'),
+('Киселёв Михаил Викторович'),
+('Лев Николаевич Толстой'),
+('Фёдор Михайлович Достоевский'),
+('Александр Сергеевич Пушкин'),
+('Дуглас Ноэль Адамс'),
 ('Нил Гейман'),
 ('Терри Пратчетт');
 
@@ -62,38 +62,3 @@ VALUES
 (4, 6), -- Автостопом по галактике - Дуглас Адамс
 (5, 7), -- Благие знамения - Нил Гейман
 (5, 8); -- Благие знамения - Терри Пратчетт
-
-
--- INSERT INTO reservations (user_id, book_id, reserved_until) VALUES
--- (1, 3, '2023-09-02'),
--- (2, 4, '2023-09-06'),
--- (4, 2, '2023-09-09');
-
-
--- INSERT INTO loans (user_id, book_id, loan_date, return_date, status_id) VALUES
--- (1, 3, '2023-09-02', '2023-12-02', 1),
--- (2, 4, '2023-09-05', '2023-12-06', 1),
--- (3, 2, '2023-09-11', '2023-12-13', 1);
-
-
--- INSERT INTO activity_logs (user_id, action, action_time) VALUES
--- (1, 'Reservation created: Book ID 3 (Reserved Until: 2023-09-02)', '2023-09-01 09:30:00'),
--- (1, 'Loan created: Book ID 3', '2023-09-02 09:00:00'),
--- (2, 'Reservation created: Book ID 4 (Reserved Until: 2023-09-06)', '2023-09-05 10:30:00'),
--- (2, 'Loan created: Book ID 4', '2023-09-05 16:00:00'),
--- (4, 'Reservation created: Book ID 2 (Reserved Until: 2023-09-09)', '2023-09-08 12:00:34'),
--- (3, 'Loan created: Book ID 2', '2023-09-10 11:05:47');
-
-
--- INSERT INTO reviews (user_id, book_id, rating, comment, review_date) VALUES
--- (1, 3, 5, 'Прекрасная поэма, мастерски описывающая жизнь в России. Рекомендую всем любителям классики!', '2023-12-03 10:30:00'),
--- (2, 4, 4, 'Интересные приключения с большим количеством юмора, но иногда сюжет был немного затянут.', '2023-12-06 14:15:00'),
--- (3, 2, 5, 'Очень глубокий и эмоциональный роман, заставляет задуматься о многих вещах.', '2023-12-11 09:00:00'),
--- (2, 3, 4, 'Классика русской литературы. Местами скучновато, но в целом очень интересно.', '2023-12-05 11:00:00'),
--- (3, 3, 5, 'Книга полна неожиданных поворотов и ярких персонажей. Особенно запомнился Марвин — его депрессивный характер добавляет особый шарм истории. Обязательно рекомендую!', '2023-12-07 16:57:09');
-
-
--- INSERT INTO book_suggestions (user_id, title, author, status_id) VALUES
--- (2, '1984', 'Джордж Оруэлл', 1),
--- (4, 'Убить пересмешника', 'Харпер Ли', 1),
--- (2, 'Мастер и Маргарита', 'Михаил Булгаков', 1);
