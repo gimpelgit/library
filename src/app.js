@@ -13,6 +13,7 @@ import { booksRouter } from "./routes/books.js";
 import { dashboardRouter } from "./routes/dashboard.js";
 import { librarianRouter } from "./routes/librarian.js";
 import { reservationsRouter } from "./routes/reservations.js";
+import { editRouter } from "./routes/edit.js";
 
 
 
@@ -45,6 +46,7 @@ app.use("/", dashboardRouter);
 app.use("/books", booksRouter);
 app.use("/librarian", librarianRouter);
 app.use("/reservations", reservationsRouter);
+app.use("/edit", editRouter);
 
 
 export { app };

@@ -15,6 +15,7 @@
           {{/if}}
           
           {{#if (eq user.role_name 'librarian')}}
+            <a class="nav-link {{#if (eq page 'edit')}}active{{/if}}" href="/edit">Редактирование</a>
             <a class="nav-link {{#if (eq page 'librarian-issue')}}active{{/if}}" href="/librarian/issue">Выдача книг</a>
             <a class="nav-link {{#if (eq page 'librarian-return')}}active{{/if}}" href="/librarian/return">Возврат книг</a>
             <a class="nav-link {{#if (eq page 'readers')}}active{{/if}}" href="/readers">Читатели</a>
@@ -23,7 +24,7 @@
           
           <form action="/auth/logout" method="POST" class="nav-item">
             <button type="submit" class="nav-link btn btn-link text-light text-decoration-none border-0">
-              Выйти ({{user.name}})
+              Выйти ({{formatFIO user.name}})
             </button>
           </form>
         {{else}}

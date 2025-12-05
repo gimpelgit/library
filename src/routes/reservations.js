@@ -37,13 +37,6 @@ reservationsRouter.get("/", requireReader, async (req, res) => {
       page: 'reservations',
       title: 'Мои забронированные книги',
       reservations,
-      formatDate: (date) => {
-        const d = new Date(date);
-        return d.toLocaleDateString('ru-RU');
-      },
-      isExpired: (date) => {
-        return new Date(date) < new Date();
-      }
     });
     
   } catch (error) {

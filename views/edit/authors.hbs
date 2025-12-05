@@ -1,0 +1,327 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="text-primary">Редактирование авторов</h1>
+    <a href="/edit" class="btn btn-outline-secondary">← Назад</a>
+  </div>
+  
+  <!-- Поиск и добавление -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-8">
+          <form method="GET" action="/edit/authors" class="row g-2">
+            <div class="col-md-8">
+              <label for="search" class="form-label">Поиск автора:</label>
+              <input type="text" class="form-control" id="search" name="search" 
+                     value="{{search}}" placeholder="Введите имя автора">
+            </div>
+            <div class="col-md-4">
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Поиск</button>
+                <a href="/edit/authors" class="btn btn-outline-secondary">Сбросить</a>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="col-md-4">
+          <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#addAuthorModal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </svg>
+            Добавить автора
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Таблица авторов -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Имя автора</th>
+              <th class="text-end">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each authors}}
+              <tr id="author-row-{{this.id}}">
+                <td>{{this.id}}</td>
+                <td id="author-name-{{this.id}}">{{this.name}}</td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-primary me-2" 
+                          onclick="editAuthor({{this.id}}, '{{this.name}}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+                    </svg>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" 
+                          onclick="deleteAuthor({{this.id}}, '{{this.name}}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                      <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                      <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            {{else}}
+              <tr>
+                <td colspan="3" class="text-center py-4 text-muted">
+                  {{#if search}}
+                    Авторы не найдены
+                  {{else}}
+                    Нет авторов. Добавьте первого автора.
+                  {{/if}}
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Пагинация -->
+  {{#if (gt totalPages 1)}}
+    <nav class="mt-4">
+      <ul class="pagination justify-content-center">
+        {{#if (gt currentPage 1)}}
+          <li class="page-item">
+            <a class="page-link" href="/edit/authors?page={{sub currentPage 1}}{{#if search}}&search={{search}}{{/if}}">← Назад</a>
+          </li>
+        {{/if}}
+        
+        {{#each (range 1 totalPages)}}
+          {{#if (eq this ../currentPage)}}
+            <li class="page-item active">
+              <span class="page-link">{{this}}</span>
+            </li>
+          {{else}}
+            <li class="page-item">
+              <a class="page-link" href="/edit/authors?page={{this}}{{#if ../search}}&search={{../search}}{{/if}}">{{this}}</a>
+            </li>
+          {{/if}}
+        {{/each}}
+        
+        {{#if (lt currentPage totalPages)}}
+          <li class="page-item">
+            <a class="page-link" href="/edit/authors?page={{add currentPage 1}}{{#if search}}&search={{search}}{{/if}}">Вперед →</a>
+          </li>
+        {{/if}}
+      </ul>
+    </nav>
+  {{/if}}
+</div>
+
+<!-- Модальное окно добавления автора -->
+<div class="modal fade" id="addAuthorModal" tabindex="-1" aria-labelledby="addAuthorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-primary" id="addAuthorModalLabel">Добавить автора</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="addAuthorForm">
+          <div class="mb-3">
+            <label for="authorName" class="form-label">Имя автора:</label>
+            <input type="text" class="form-control" id="authorName" required>
+            <div class="form-text">Введите полное имя автора</div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="addAuthor()">Добавить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно редактирования автора -->
+<div class="modal fade" id="editAuthorModal" tabindex="-1" aria-labelledby="editAuthorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-primary" id="editAuthorModalLabel">Редактировать автора</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editAuthorForm">
+          <input type="hidden" id="editAuthorId">
+          <div class="mb-3">
+            <label for="editAuthorName" class="form-label">Имя автора:</label>
+            <input type="text" class="form-control" id="editAuthorName" required>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-primary" onclick="updateAuthor()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteAuthorModal" tabindex="-1" aria-labelledby="deleteAuthorModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger" id="deleteAuthorModalLabel">Удаление автора</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Вы действительно хотите удалить автора?</p>
+        <div class="p-3 bg-light rounded">
+          <p class="mb-1"><strong>Автор:</strong> <span id="deleteAuthorName"></span></p>
+          <p class="mb-0 text-danger"><small>Внимание: удаление автора, с которым связаны книги, невозможно.</small></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteAuthorBtn">Удалить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+  let currentAuthorId = null;
+  
+  // Добавление автора
+  async function addAuthor() {
+    const name = document.getElementById('authorName').value.trim();
+    
+    if (!name) {
+      showNotification('Введите имя автора', 'error');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/edit/authors', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addAuthorModal'));
+        modal.hide();
+        showNotification(result.message, 'success');
+        
+        // Обновляем страницу через 1 секунду
+        setTimeout(() => {
+          location.reload();
+        }, 1000);
+      } else {
+        showNotification('Ошибка: ' + result.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Произошла ошибка при добавлении автора', 'error');
+    }
+  }
+  
+  // Редактирование автора
+  function editAuthor(id, name) {
+    currentAuthorId = id;
+    document.getElementById('editAuthorId').value = id;
+    document.getElementById('editAuthorName').value = name;
+    
+    const modal = new bootstrap.Modal(document.getElementById('editAuthorModal'));
+    modal.show();
+  }
+  
+  async function updateAuthor() {
+    const id = document.getElementById('editAuthorId').value;
+    const name = document.getElementById('editAuthorName').value.trim();
+    
+    if (!name) {
+      showNotification('Введите имя автора', 'error');
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/edit/authors/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editAuthorModal'));
+        modal.hide();
+        
+        // Обновляем имя в таблице без перезагрузки страницы
+        document.getElementById(`author-name-${id}`).textContent = name;
+        
+        showNotification(result.message, 'success');
+      } else {
+        showNotification('Ошибка: ' + result.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Произошла ошибка при обновлении автора', 'error');
+    }
+  }
+  
+  // Удаление автора
+  function deleteAuthor(id, name) {
+    currentAuthorId = id;
+    document.getElementById('deleteAuthorName').textContent = name;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteAuthorModal'));
+    modal.show();
+  }
+  
+  document.getElementById('confirmDeleteAuthorBtn').addEventListener('click', async function() {
+    if (!currentAuthorId) return;
+    
+    try {
+      const response = await fetch(`/edit/authors/${currentAuthorId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteAuthorModal'));
+        modal.hide();
+        
+        // Удаляем строку из таблицы
+        const row = document.getElementById(`author-row-${currentAuthorId}`);
+        if (row) row.remove();
+        
+        showNotification(result.message, 'success');
+      } else {
+        showNotification('Ошибка: ' + result.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Произошла ошибка при удалении автора', 'error');
+    }
+  });
+  
+  // Закрытие модального окна добавления сбрасывает форму
+  document.getElementById('addAuthorModal').addEventListener('hidden.bs.modal', function () {
+    document.getElementById('authorName').value = '';
+  });
+</script>
+{{/section}}

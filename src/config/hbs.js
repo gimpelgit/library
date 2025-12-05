@@ -1,3 +1,13 @@
+/**
+ * @param {string} fio 
+ */
+function _formatFIO(fio) {
+  const parts = fio.split(' ');
+  if (parts.length === 3)
+    return `${parts[0][0]}.${parts[1][0]}. ${parts[2]}`;
+  return fio;
+}
+
 export const hbsHelpers = {
   eq(a, b) {
     return a === b;
@@ -33,6 +43,22 @@ export const hbsHelpers = {
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
     return `${day}.${month}.${year}`;
+  },
+
+  /**
+   * @param {string|string[]} fio 
+   */
+  formatFIO(fio) {
+    if (typeof fio === 'string') {
+      if (fio.includes(',')) {
+        return fio.split(',').map(author => _formatFIO(author.trim())).join(', ');
+      }
+      return _formatFIO(fio);
+    }
+    if (Array.isArray(fio)) {
+      return fio.map(_formatFIO).join(', ');
+    }
+    return fio;
   },
   isOverdue(returnDate) {
     if (!returnDate) return false;
