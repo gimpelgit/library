@@ -25,10 +25,29 @@
     </div>
   </div>
 
+  <!-- Брони читателя -->
+  <div class="card shadow-sm mb-4" id="readerReservationsCard" style="display: none;">
+    <div class="card-body">
+      <h5 class="card-title mb-3">2. Брони читателя</h5>
+      <div id="reservationsList" class="mb-3">
+        <div class="text-center py-3">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+          </div>
+          <p class="mt-2 text-muted">Загрузка броней...</p>
+        </div>
+      </div>
+      <div id="selectedReservations" style="display: none;">
+        <h6 class="mb-3">Выбранные брони для выдачи:</h6>
+        <div id="selectedReservationsList" class="mb-3"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Фильтры книг -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <h5 class="card-title mb-3">2. Выбор книг</h5>
+      <h5 class="card-title mb-3">3. Выбор дополнительных книг</h5>
       <form method="GET" action="/librarian/issue">
         <div class="row g-3 align-items-end">
           <div class="col-md-3">
@@ -60,16 +79,6 @@
             </select>
           </div>
           
-          {{!-- <div class="col-md-2">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" name="available" value="true" 
-                     {{#if (eq filters.available 'true')}}checked{{/if}} id="availableCheck">
-              <label class="form-check-label" for="availableCheck">
-                Только доступные
-              </label>
-            </div>
-          </div> --}}
-          
           <div class="col-md-3">
             <div class="d-grid gap-2">
               <button type="submit" class="btn btn-primary">Применить фильтры</button>
@@ -84,8 +93,8 @@
   <!-- Выбранные книги -->
   <div class="card shadow-sm mb-4" id="selectedBooksCard" style="display: none;">
     <div class="card-body">
-      <h5 class="card-title mb-3">Выбранные книги для выдачи</h5>
-      <div id="selectedBooksList" class="mb-3"></div>
+      <h5 class="card-title mb-3">Итоговый список для выдачи</h5>
+      <div id="selectedItemsList" class="mb-3"></div>
       <div class="row">
         <div class="col-md-3">
           <label for="loanDays" class="form-label">Срок выдачи (дней):</label>
@@ -104,7 +113,7 @@
   <div class="row g-4 mb-4">
     {{#each books}}
       <div class="col-xl-3 col-lg-4 col-md-6">
-        <div class="card h-100 shadow-sm book-card">
+        <div class="card h-100 shadow-sm">
           <div class="card-body">
             <div class="text-center mb-3">
               {{#if this.cover_image_url}}
@@ -127,7 +136,7 @@
               
               {{#if (gt this.quantity 0)}}
                 <button type="button" class="btn btn-sm btn-outline-primary w-100" 
-                        onclick="selectBook({{this.id}}, '{{this.title}}', '{{this.authors}}')">
+                        onclick="selectBook({{this.id}}, '{{this.title}}', '{{this.authors}}', null)">
                   Выбрать для выдачи
                 </button>
               {{else}}
@@ -181,25 +190,31 @@
 {{#section 'scripts'}}
 <script>
   let selectedReader = null;
-  let selectedBooks = new Map();
+  let selectedBooks = new Map(); // {bookId: {title, authors, isReservation: false}}
+  let selectedReservations = new Map(); // {reservationId: {title, authors, bookId, isReservation: true}}
+  let readerReservations = [];
 
-  // Сохранение состояния при загрузке страницы
   document.addEventListener('DOMContentLoaded', function() {
-    // Восстановление выбранного читателя из sessionStorage
     const savedReader = sessionStorage.getItem('selectedReader');
     if (savedReader) {
       selectedReader = JSON.parse(savedReader);
       updateReaderDisplay();
+      loadReaderReservations();
     }
 
-    // Восстановление выбранных книг из sessionStorage
     const savedBooks = sessionStorage.getItem('selectedBooks');
     if (savedBooks) {
       const booksArray = JSON.parse(savedBooks);
       selectedBooks = new Map(booksArray);
-      updateSelectedBooksList();
     }
 
+    const savedReservations = sessionStorage.getItem('selectedReservations');
+    if (savedReservations) {
+      const reservationsArray = JSON.parse(savedReservations);
+      selectedReservations = new Map(reservationsArray);
+    }
+
+    updateSelectedItemsList();
     updateIssueButton();
   });
 
@@ -236,10 +251,13 @@
     document.getElementById('readerSearch').value = '';
     document.getElementById('readerResults').innerHTML = '';
     
-    // Сохраняем в sessionStorage
     sessionStorage.setItem('selectedReader', JSON.stringify(reader));
+    sessionStorage.removeItem('selectedReservations');
+    selectedReservations.clear();
     
     updateReaderDisplay();
+    loadReaderReservations();
+    updateSelectedItemsList();
     updateIssueButton();
   }
 
@@ -250,38 +268,146 @@
         <small>${selectedReader.email}</small>
       `;
       document.getElementById('selectedReader').style.display = 'block';
+      document.getElementById('readerReservationsCard').style.display = 'block';
     } else {
       document.getElementById('selectedReader').style.display = 'none';
+      document.getElementById('readerReservationsCard').style.display = 'none';
     }
   }
 
   function clearReader() {
     selectedReader = null;
+    readerReservations = [];
     sessionStorage.removeItem('selectedReader');
+    sessionStorage.removeItem('selectedReservations');
+    selectedReservations.clear();
+    
     updateReaderDisplay();
+    updateSelectedItemsList();
     updateIssueButton();
   }
 
-  // Выбор книг
+  async function loadReaderReservations() {
+    if (!selectedReader) return;
+    
+    const reservationsList = document.getElementById('reservationsList');
+    reservationsList.innerHTML = `
+      <div class="text-center py-3">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Загрузка...</span>
+        </div>
+        <p class="mt-2 text-muted">Загрузка броней...</p>
+      </div>
+    `;
+    
+    try {
+      const response = await fetch(`/reservations/api/readers/${selectedReader.id}`);
+      readerReservations = await response.json();
+      
+      if (readerReservations.length === 0) {
+        reservationsList.innerHTML = `
+          <div class="text-center py-4">
+            <p class="text-muted">У читателя нет активных броней</p>
+          </div>
+        `;
+        return;
+      }
+      
+      displayReservations();
+    } catch (error) {
+      console.error('Error loading reservations:', error);
+      reservationsList.innerHTML = `
+        <div class="alert alert-danger">
+          Ошибка при загрузке броней
+        </div>
+      `;
+    }
+  }
+
+  function displayReservations() {
+    const reservationsList = document.getElementById('reservationsList');
+    reservationsList.innerHTML = '';
+    
+    readerReservations.forEach(reservation => {
+      const isSelected = selectedReservations.has(reservation.reservation_id);
+      const isExpired = new Date(reservation.reserved_until) < new Date();
+      
+      const div = document.createElement('div');
+      div.className = `d-flex justify-content-between align-items-center border p-3 mb-3 rounded ${isExpired ? 'border-danger' : ''}`;
+      div.innerHTML = `
+        <div style="flex: 1;">
+          <div class="d-flex align-items-start">
+            ${reservation.cover_image_url ? 
+              `<img src="${reservation.cover_image_url}" class="img-fluid rounded me-3" alt="${reservation.title}" style="max-height: 60px; max-width: 45px;">` : 
+              `<img src="/images/covers/default.png" class="img-fluid rounded me-3" alt="${reservation.title}" style="max-height: 60px; max-width: 45px;">`
+            }
+            <div>
+              <h6 class="mb-1 ${isExpired ? 'text-danger' : 'text-primary'}">${reservation.title}</h6>
+              <p class="mb-1"><small><strong>Авторы:</strong> ${reservation.authors}</small></p>
+              <p class="mb-1"><small><strong>Жанры:</strong> ${reservation.genres}</small></p>
+              <p class="mb-0 ${isExpired ? 'text-danger' : ''}">
+                <small><strong>Бронирование до:</strong> ${new Date(reservation.reserved_until).toLocaleDateString('ru-RU')}</small>
+                ${isExpired ? '<span class="badge bg-danger ms-1">Истекло</span>' : ''}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="ms-3">
+          <button type="button" class="btn btn-sm ${isSelected ? 'btn-success' : 'btn-outline-primary'}" 
+                  onclick="toggleReservation(${reservation.reservation_id}, ${reservation.book_id}, '${reservation.title.replace(/'/g, "\\'")}', '${reservation.authors.replace(/'/g, "\\'")}')">
+            ${isSelected ? '✓ Выбрано' : 'Выбрать'}
+          </button>
+        </div>
+      `;
+      reservationsList.appendChild(div);
+    });
+    
+    document.getElementById('selectedReservations').style.display = 
+      selectedReservations.size > 0 ? 'block' : 'none';
+  }
+
+  function toggleReservation(reservationId, bookId, title, authors) {
+    if (selectedReservations.has(reservationId)) {
+      selectedReservations.delete(reservationId);
+    } else {
+      selectedReservations.set(reservationId, {
+        bookId,
+        title,
+        authors,
+        isReservation: true
+      });
+    }
+    
+    sessionStorage.setItem('selectedReservations', JSON.stringify(Array.from(selectedReservations.entries())));
+    displayReservations();
+    updateSelectedItemsList();
+    updateIssueButton();
+  }
+
+  // Выбор обычных книг
   function selectBook(bookId, title, authors) {
     if (selectedBooks.has(bookId)) {
       selectedBooks.delete(bookId);
     } else {
-      selectedBooks.set(bookId, { title, authors });
+      selectedBooks.set(bookId, {
+        title,
+        authors,
+        isReservation: false
+      });
     }
     
-    // Сохраняем в sessionStorage
     sessionStorage.setItem('selectedBooks', JSON.stringify(Array.from(selectedBooks.entries())));
-    
-    updateSelectedBooksList();
+    updateSelectedItemsList();
     updateIssueButton();
   }
 
-  function updateSelectedBooksList() {
-    const listDiv = document.getElementById('selectedBooksList');
+  function updateSelectedItemsList() {
+    const listDiv = document.getElementById('selectedItemsList');
     const card = document.getElementById('selectedBooksCard');
     
-    if (selectedBooks.size === 0) {
+    const totalItems = selectedReservations.size + selectedBooks.size;
+    
+    if (totalItems === 0) {
       card.style.display = 'none';
       return;
     }
@@ -289,35 +415,68 @@
     card.style.display = 'block';
     listDiv.innerHTML = '';
     
-    selectedBooks.forEach((book, bookId) => {
+    // Показываем брони
+    selectedReservations.forEach((item, reservationId) => {
+      const div = document.createElement('div');
+      div.className = 'd-flex justify-content-between align-items-center border p-2 mb-2 rounded bg-light';
+      div.innerHTML = `
+        <div>
+          <span class="badge bg-info me-2">Бронь</span>
+          <strong>${item.title}</strong><br>
+          <small>${item.authors}</small>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger" 
+                onclick="toggleReservation(${reservationId}, ${item.bookId}, '${item.title.replace(/'/g, "\\'")}', '${item.authors.replace(/'/g, "\\'")}')">
+          Удалить
+        </button>
+      `;
+      listDiv.appendChild(div);
+    });
+    
+    // Показываем обычные книги
+    selectedBooks.forEach((item, bookId) => {
       const div = document.createElement('div');
       div.className = 'd-flex justify-content-between align-items-center border p-2 mb-2 rounded';
       div.innerHTML = `
         <div>
-          <strong>${book.title}</strong><br>
-          <small>${book.authors}</small>
+          <strong>${item.title}</strong><br>
+          <small>${item.authors}</small>
         </div>
         <button type="button" class="btn btn-sm btn-outline-danger" 
-                onclick="selectBook(${bookId})">Удалить</button>
+                onclick="selectBook(${bookId}, '${item.title.replace(/'/g, "\\'")}', '${item.authors.replace(/'/g, "\\'")}')">
+          Удалить
+        </button>
       `;
       listDiv.appendChild(div);
     });
+    
+    // Показываем итоговую статистику
+    const statsDiv = document.createElement('div');
+    statsDiv.className = 'mt-3 p-2 border-top';
+    statsDiv.innerHTML = `
+      <p class="mb-0">
+        <strong>Итого:</strong> ${totalItems} книг 
+        ${selectedReservations.size > 0 ? `<span class="badge bg-info ms-2">${selectedReservations.size} броней</span>` : ''}
+        ${selectedBooks.size > 0 ? `<span class="badge bg-primary ms-2">${selectedBooks.size} обычных</span>` : ''}
+      </p>
+    `;
+    listDiv.appendChild(statsDiv);
   }
 
   function updateIssueButton() {
-    const canIssue = selectedReader && selectedBooks.size > 0;
+    const canIssue = selectedReader && (selectedReservations.size > 0 || selectedBooks.size > 0);
     const issueButton = document.querySelector('button[onclick="issueBooks()"]');
     if (issueButton) {
       issueButton.disabled = !canIssue;
     }
   }
 
-  // Оформление выдачи
   async function issueBooks() {
-    if (!selectedReader || selectedBooks.size === 0) return;
+    if (!selectedReader || (selectedReservations.size === 0 && selectedBooks.size === 0)) return;
     
     const loanDays = document.getElementById('loanDays').value || 30;
     const bookIds = Array.from(selectedBooks.keys());
+    const reservationIds = Array.from(selectedReservations.keys());
     
     try {
       const response = await fetch('/librarian/issue', {
@@ -327,7 +486,8 @@
         },
         body: JSON.stringify({
           readerId: selectedReader.id,
-          bookIds: bookIds,
+          bookIds: bookIds.length > 0 ? bookIds : undefined,
+          reservationIds: reservationIds.length > 0 ? reservationIds : undefined,
           loanDays: loanDays
         })
       });
@@ -339,11 +499,20 @@
         // Сброс формы
         selectedReader = null;
         selectedBooks.clear();
+        selectedReservations.clear();
+        readerReservations = [];
         sessionStorage.removeItem('selectedReader');
         sessionStorage.removeItem('selectedBooks');
+        sessionStorage.removeItem('selectedReservations');
+        
         clearReader();
-        updateSelectedBooksList();
+        updateSelectedItemsList();
         updateIssueButton();
+        
+        // Обновляем страницу через 2 секунды
+        setTimeout(() => {
+          window.location.href = '/librarian/issue';
+        }, 2000);
       } else {
         showNotification('Ошибка: ' + result.message, 'error');
       }
@@ -355,12 +524,14 @@
 
   // Обработка отправки формы фильтров
   document.querySelector('form[action="/librarian/issue"]').addEventListener('submit', function(e) {
-    // Сохраняем текущее состояние перед применением фильтров
     if (selectedReader) {
       sessionStorage.setItem('selectedReader', JSON.stringify(selectedReader));
     }
     if (selectedBooks.size > 0) {
       sessionStorage.setItem('selectedBooks', JSON.stringify(Array.from(selectedBooks.entries())));
+    }
+    if (selectedReservations.size > 0) {
+      sessionStorage.setItem('selectedReservations', JSON.stringify(Array.from(selectedReservations.entries())));
     }
   });
 </script>

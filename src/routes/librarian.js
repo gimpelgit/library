@@ -136,16 +136,18 @@ librarianRouter.get("/api/readers", async (req, res) => {
 // Оформление выдачи книг
 librarianRouter.post("/issue", async (req, res) => {
   try {
-    const { readerId, bookIds, loanDays = 30 } = req.body;
+    const { readerId, bookIds, reservationIds, loanDays = 30 } = req.body;
     
-    if (!readerId || !bookIds) {
+    if (!readerId || (!bookIds && !reservationIds)) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Необходимо выбрать читателя и книги' 
+        message: 'Необходимо выбрать читателя и хотя бы одну книгу или бронь' 
       });
     }
 
-    const bookIdArray = Array.isArray(bookIds) ? bookIds : [bookIds];
+    const bookIdArray = Array.isArray(bookIds) ? bookIds : (bookIds ? [bookIds] : []);
+    const reservationIdArray = Array.isArray(reservationIds) ? reservationIds : (reservationIds ? [reservationIds] : []);
+    
     const loanDate = new Date();
     const returnDate = new Date();
     returnDate.setDate(returnDate.getDate() + parseInt(loanDays));
@@ -160,32 +162,61 @@ librarianRouter.post("/issue", async (req, res) => {
     
     const statusId = loanStatus[0].id;
     
-    // Проверяем доступность книг
-    for (const bookId of bookIdArray) {
-      const [books] = await pool.execute(
-        'SELECT quantity FROM books WHERE id = ?',
-        [bookId]
+    // Если есть reservationIds, обрабатываем их
+    if (reservationIdArray.length > 0) {
+      // Получаем информацию о бронях
+      const placeholders = reservationIdArray.map(() => '?').join(',');
+      const [reservations] = await pool.execute(
+        `SELECT book_id FROM reservations WHERE id IN (${placeholders})`,
+        reservationIdArray
       );
       
-      if (books.length === 0 || books[0].quantity <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: `Книга с ID ${bookId} недоступна для выдачи`
-        });
+      // Создаем записи о выдаче для броней
+      for (const reservation of reservations) {
+        await pool.execute(
+          'INSERT INTO loans (user_id, book_id, status_id, loan_date, return_date) VALUES (?, ?, ?, ?, ?)',
+          [readerId, reservation.book_id, statusId, loanDate, returnDate]
+        );
+      }
+      
+      // Удаляем использованные брони
+      await pool.execute(
+        `DELETE FROM reservations WHERE id IN (${placeholders})`,
+        reservationIdArray
+      );
+    }
+    
+    // Если есть обычные bookIds, обрабатываем их
+    if (bookIdArray.length > 0) {
+      // Проверяем доступность книг
+      for (const bookId of bookIdArray) {
+        const [books] = await pool.execute(
+          'SELECT quantity FROM books WHERE id = ?',
+          [bookId]
+        );
+        
+        if (books.length === 0 || books[0].quantity <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Книга с ID ${bookId} недоступна для выдачи`
+          });
+        }
+      }
+      
+      // Создаем записи о выдаче для обычных книг
+      for (const bookId of bookIdArray) {
+        await pool.execute(
+          'INSERT INTO loans (user_id, book_id, status_id, loan_date, return_date) VALUES (?, ?, ?, ?, ?)',
+          [readerId, bookId, statusId, loanDate, returnDate]
+        );
       }
     }
     
-    // Создаем записи о выдаче
-    for (const bookId of bookIdArray) {
-      await pool.execute(
-        'INSERT INTO loans (user_id, book_id, status_id, loan_date, return_date) VALUES (?, ?, ?, ?, ?)',
-        [readerId, bookId, statusId, loanDate, returnDate]
-      );
-    }
+    const totalBooks = reservationIdArray.length + bookIdArray.length;
     
     res.json({ 
       success: true, 
-      message: `Успешно оформлена выдача ${bookIdArray.length} книг` 
+      message: `Успешно оформлена выдача ${totalBooks} книг` 
     });
     
   } catch (error) {

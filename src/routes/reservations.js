@@ -1,14 +1,13 @@
 import { Router } from "express";
 import { pool } from "../config/database.js";
-import { requireAuth, requireReader } from "../middleware/auth.js";
+import { requireAuth, requireLibrarian, requireReader } from "../middleware/auth.js";
 
 export const reservationsRouter = Router();
 
 reservationsRouter.use(requireAuth);
-reservationsRouter.use(requireReader);
 
 // Страница с забронированными книгами
-reservationsRouter.get("/", async (req, res) => {
+reservationsRouter.get("/", requireReader, async (req, res) => {
   try {
     const userId = req.session.user.id;
     
@@ -59,7 +58,7 @@ reservationsRouter.get("/", async (req, res) => {
 
 
 // API для получения броней читателя
-reservationsRouter.get("/reader/:readerId", async (req, res) => {
+reservationsRouter.get("/api/readers/:readerId", requireLibrarian, async (req, res) => {
   try {
     const { readerId } = req.params;
     
@@ -98,7 +97,7 @@ reservationsRouter.get("/reader/:readerId", async (req, res) => {
 });
 
 // API для бронирования книги
-reservationsRouter.post("/reserve", async (req, res) => {
+reservationsRouter.post("/reserve", requireReader, async (req, res) => {
   try {
     const { bookId } = req.body;
     const userId = req.session.user.id;
@@ -169,7 +168,7 @@ reservationsRouter.post("/reserve", async (req, res) => {
 });
 
 // API для отмены бронирования
-reservationsRouter.post("/cancel/:id", async (req, res) => {
+reservationsRouter.post("/cancel/:id", requireReader, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.session.user.id;
