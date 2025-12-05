@@ -1,0 +1,121 @@
+<div class="container mt-4">
+  <h1 class="mb-4 text-primary">Мои забронированные книги</h1>
+  
+  {{#if reservations.length}}
+    <div class="row g-4">
+      {{#each reservations}}
+        <div class="col-xl-4 col-lg-6 col-md-6">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <h6 class="card-title text-primary">{{this.title}}</h6>
+                {{#if this.cover_image_url}}
+                  <img src="{{this.cover_image_url}}" class="img-fluid rounded" alt="{{this.title}}" 
+                       style="max-height: 80px; max-width: 60px;">
+                {{else}}
+                  <img src="/images/covers/default.png" class="img-fluid" alt="{{this.title}}"
+                       style="max-height: 80px; max-width: 60px;">
+                {{/if}}
+              </div>
+              
+              <div class="card-text">
+                <p class="mb-1"><small><strong>Авторы:</strong> {{this.authors}}</small></p>
+                <p class="mb-1"><small><strong>Жанры:</strong> {{this.genres}}</small></p>
+                <p class="mb-3 {{#if (isOverdue this.reserved_until)}}text-danger{{/if}}">
+                  <small><strong>Бронирование до:</strong> {{formatDate this.reserved_until}}</small>
+                  {{#if (isOverdue this.reserved_until)}}
+                    <span class="badge bg-danger ms-1">Истекло</span>
+                  {{/if}}
+                </p>
+                
+                <div class="d-grid gap-2">
+                  <a href="/books/{{this.book_id}}" class="btn btn-outline-primary">Подробнее</a>
+                  <button type="button" class="btn btn-danger" 
+                          onclick="cancelReservation({{this.id}}, '{{this.title}}')">
+                    Отменить бронь
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  {{else}}
+    <div class="card shadow-sm">
+      <div class="card-body text-center py-5">
+        <p class="text-muted lead mb-4">У вас нет забронированных книг</p>
+        <a href="/books" class="btn btn-primary btn-lg">Перейти в каталог</a>
+      </div>
+    </div>
+  {{/if}}
+</div>
+
+<!-- Модальное окно подтверждения отмены -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-primary" id="cancelModalLabel">Отмена бронирования</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Вы действительно хотите отменить бронирование книги?</p>
+        <div class="cancel-details p-3 bg-light rounded">
+          <p class="mb-1"><strong>Книга:</strong> <span id="modalBookTitle"></span></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="button" class="btn btn-danger" id="confirmCancelBtn">Отменить бронь</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+  let currentReservationId = null;
+
+  function cancelReservation(reservationId, bookTitle) {
+    currentReservationId = reservationId;
+    
+    document.getElementById('modalBookTitle').textContent = bookTitle;
+    
+    const cancelModal = new bootstrap.Modal(document.getElementById('cancelModal'));
+    cancelModal.show();
+  }
+
+  document.getElementById('confirmCancelBtn').addEventListener('click', async function() {
+    if (!currentReservationId) return;
+    
+    try {
+      const response = await fetch(`/reservations/cancel/${currentReservationId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        const cancelModal = bootstrap.Modal.getInstance(document.getElementById('cancelModal'));
+        cancelModal.hide();
+        
+        showNotification(result.message, 'success');
+        
+        // Обновляем страницу через 1 секунду для отображения уведомления
+        setTimeout(() => {
+          location.reload();
+        }, 1000);
+      } else {
+        showNotification('Ошибка: ' + result.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Произошла ошибка при отмене бронирования', 'error');
+    }
+  });
+</script>
+{{/section}}

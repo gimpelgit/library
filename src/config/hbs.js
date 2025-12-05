@@ -35,6 +35,7 @@ export const hbsHelpers = {
     return `${day}.${month}.${year}`;
   },
   isOverdue(returnDate) {
+    if (!returnDate) return false;
     return new Date(returnDate) < new Date();
   }
 }

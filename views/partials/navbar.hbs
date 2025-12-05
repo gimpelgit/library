@@ -10,7 +10,7 @@
       <div class="navbar-nav ms-auto">
         {{#if user}}
           {{#if (eq user.role_name 'reader')}}
-            <a class="nav-link {{#if (eq page 'my-books')}}active{{/if}}" href="/my-books">Мои книги</a>
+            <a class="nav-link {{#if (eq page 'reservations')}}active{{/if}}" href="/reservations">Мои брони</a>
             <a class="nav-link {{#if (eq page 'profile')}}active{{/if}}" href="/profile">Личный кабинет</a>
           {{/if}}
           

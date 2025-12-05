@@ -3,14 +3,6 @@ import { requireAuth, requireReader, requireLibrarian } from "../middleware/auth
 
 export const dashboardRouter = Router();
 
-dashboardRouter.get("/my-books", requireAuth, requireReader, (req, res) => {
-  res.render("dashboard", {
-    user: req.session.user,
-    page: 'my-books',
-    title: 'Мои книги'
-  });
-});
-
 dashboardRouter.get("/profile", requireAuth, requireReader, (req, res) => {
   res.render("dashboard", {
     user: req.session.user,

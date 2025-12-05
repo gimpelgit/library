@@ -12,6 +12,8 @@ import { authRouter } from "./routes/auth.js";
 import { booksRouter } from "./routes/books.js";
 import { dashboardRouter } from "./routes/dashboard.js";
 import { librarianRouter } from "./routes/librarian.js";
+import { reservationsRouter } from "./routes/reservations.js";
+
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -42,5 +44,7 @@ app.use("/auth", authRouter);
 app.use("/", dashboardRouter);
 app.use("/books", booksRouter);
 app.use("/librarian", librarianRouter);
+app.use("/reservations", reservationsRouter);
+
 
 export { app };

@@ -38,7 +38,8 @@
             {{#if (eq user.role_name 'reader')}}
               <div class="book-actions">
                 {{#if (gt book.quantity 0)}}
-                  <button class="btn btn-primary btn-lg">Забронировать</button>
+                  <button class="btn btn-primary btn-lg" onclick="reserveBook({{book.id}})">Забронировать</button>
+                  <div id="reservationMessage" class="mt-2"></div>
                 {{else}}
                   <button class="btn btn-secondary btn-lg" disabled>Нет в наличии</button>
                 {{/if}}
@@ -54,3 +55,46 @@
     </div>
   </div>
 </div>
+
+{{#section 'scripts'}}
+<script>
+  async function reserveBook(bookId) {
+    try {
+      const button = event.target;
+      const originalText = button.innerHTML;
+      
+      button.disabled = true;
+      button.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Бронируем...';
+      
+      const response = await fetch('/reservations/reserve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bookId })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showNotification(result.message, 'success');
+        document.getElementById('reservationMessage').innerHTML = `
+          <div class="alert alert-success">
+            Книга забронирована до ${result.reservedUntil}
+          </div>
+        `;
+        button.style.display = 'none';
+      } else {
+        showNotification('Ошибка: ' + result.message, 'error');
+        button.disabled = false;
+        button.innerHTML = originalText;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Произошла ошибка при бронировании', 'error');
+      button.disabled = false;
+      button.innerHTML = originalText;
+    }
+  }
+</script>
+{{/section}}
