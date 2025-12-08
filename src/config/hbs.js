@@ -60,8 +60,15 @@ export const hbsHelpers = {
     }
     return fio;
   },
+  truncate(text, length) {
+    if (text.length <= length) return text;
+    return text.substring(0, length) + '...';
+  },
   isOverdue(returnDate) {
     if (!returnDate) return false;
     return new Date(returnDate) < new Date();
-  }
+  },
+  json(context) {
+    return JSON.stringify(context);
+  },
 }

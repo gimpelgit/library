@@ -1,0 +1,551 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="text-primary">{{#if book.id}}Редактирование книги{{else}}Добавление книги{{/if}}</h1>
+    <a href="/edit/books" class="btn btn-outline-secondary">← Назад к списку</a>
+  </div>
+  
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <form id="bookForm">
+        <input type="hidden" id="bookId" value="{{book.id}}">
+        
+        <div class="row mb-4">
+          <div class="col-md-8">
+            <div class="mb-3">
+              <label for="bookTitle" class="form-label">Название *</label>
+              <input type="text" class="form-control" id="bookTitle" value="{{book.title}}" required>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="bookQuantity" class="form-label">Количество экземпляров *</label>
+              <input type="number" class="form-control" id="bookQuantity" value="{{book.quantity}}" min="0" required>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <label for="bookSummary" class="form-label">Описание *</label>
+          <textarea class="form-control" id="bookSummary" rows="3" required>{{book.summary}}</textarea>
+        </div>
+        
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="bookPageCount" class="form-label">Количество страниц *</label>
+              <input type="number" class="form-control" id="bookPageCount" value="{{book.page_count}}" min="1" required>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="bookCoverUrl" class="form-label">URL обложки</label>
+              <input type="text" class="form-control" id="bookCoverUrl" value="{{book.cover_image_url}}" 
+                     placeholder="/images/covers/filename.png">
+              <div class="form-text">Путь к изображению в папке public/images/covers/</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Секция выбора авторов -->
+        <div class="card mb-4 border-primary">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Авторы *</h5>
+          </div>
+          <div class="card-body">
+            <!-- Выбранные авторы (чипсы) -->
+            <div id="selectedAuthorsContainer" class="mb-3">
+              <div class="d-flex flex-wrap gap-2" id="selectedAuthorsList">
+                <!-- Здесь будут отображаться выбранные авторы -->
+              </div>
+            </div>
+            
+            <!-- Поиск авторов -->
+            <div class="search-container mb-3">
+              <label for="authorSearch" class="form-label">Поиск авторов:</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="authorSearch" 
+                       placeholder="Начните вводить имя автора...">
+                <button class="btn btn-outline-secondary" type="button" id="clearAuthorSearch">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Результаты поиска авторов -->
+            <div class="search-results-container">
+              <div class="card">
+                <div class="card-header bg-light">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span>Результаты поиска</span>
+                    <small id="authorResultsCount">Найдено: 0</small>
+                  </div>
+                </div>
+                <div class="card-body p-0">
+                  <div id="authorSearchResults" class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Результаты будут загружаться здесь -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Секция выбора жанров -->
+        <div class="card mb-4 border-primary">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Жанры *</h5>
+          </div>
+          <div class="card-body">
+            <!-- Выбранные жанры (чипсы) -->
+            <div id="selectedGenresContainer" class="mb-3">
+              <div class="d-flex flex-wrap gap-2" id="selectedGenresList">
+                <!-- Здесь будут отображаться выбранные жанры -->
+              </div>
+            </div>
+            
+            <!-- Поиск жанров -->
+            <div class="search-container mb-3">
+              <label for="genreSearch" class="form-label">Поиск жанров:</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="genreSearch" 
+                       placeholder="Начните вводить название жанра...">
+                <button class="btn btn-outline-secondary" type="button" id="clearGenreSearch">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Результаты поиска жанров -->
+            <div class="search-results-container">
+              <div class="card">
+                <div class="card-header bg-light">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span>Результаты поиска</span>
+                    <small id="genreResultsCount">Найдено: 0</small>
+                  </div>
+                </div>
+                <div class="card-body p-0">
+                  <div id="genreSearchResults" class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Результаты будут загружаться здесь -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <a href="/edit/books" class="btn btn-secondary">Отмена</a>
+          <button type="submit" class="btn btn-primary">
+            {{#if book.id}}Сохранить изменения{{else}}Добавить книгу{{/if}}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{{#section 'scripts'}}
+<script>
+  // Данные книги
+  const bookData = {
+    id: '{{book.id}}',
+    authors: {{{json book.author_ids}}},
+    genres: {{{json book.genre_ids}}}
+  };
+  
+  // Хранилище выбранных авторов и жанров
+  let selectedAuthors = new Map();
+  let selectedGenres = new Map();
+  
+  // Инициализация при загрузке страницы
+  document.addEventListener('DOMContentLoaded', async function() {
+    // Загружаем выбранных авторов и жанры
+    await initializeSelectedItems();
+    
+    // Инициализируем поиск
+    initializeAuthorSearch();
+    initializeGenreSearch();
+    
+    // Настройка формы
+    setupForm();
+  });
+  
+  // Инициализация выбранных авторов и жанров
+  async function initializeSelectedItems() {
+    if (bookData.authors && bookData.authors.length > 0) {
+      await loadSelectedAuthors(bookData.authors);
+    }
+    
+    if (bookData.genres && bookData.genres.length > 0) {
+      await loadSelectedGenres(bookData.genres);
+    }
+    
+    updateSelectedCounters();
+  }
+  
+  // Загрузка выбранных авторов
+  async function loadSelectedAuthors(authorIds) {
+    try {
+      const response = await fetch(`/edit/api/authors/search?limit=100`);
+      const result = await response.json();
+      
+      if (result.success) {
+        result.authors.forEach(author => {
+          if (authorIds.includes(author.id)) {
+            selectedAuthors.set(author.id, {
+              id: author.id,
+              name: author.name,
+              formattedName: formatAuthorName(author.name)
+            });
+          }
+        });
+        renderSelectedAuthors();
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке авторов:', error);
+    }
+  }
+  
+  // Загрузка выбранных жанров
+  async function loadSelectedGenres(genreIds) {
+    try {
+      const response = await fetch(`/edit/api/genres/search?limit=100`);
+      const result = await response.json();
+      
+      if (result.success) {
+        result.genres.forEach(genre => {
+          if (genreIds.includes(genre.id)) {
+            selectedGenres.set(genre.id, {
+              id: genre.id,
+              name: genre.name
+            });
+          }
+        });
+        renderSelectedGenres();
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке жанров:', error);
+    }
+  }
+  
+  // Форматирование имени автора (сокращенное)
+  function formatAuthorName(fullName) {
+    const parts = fullName.split(' ');
+    if (parts.length === 3) {
+      return `${parts[0][0]}.${parts[1][0]}. ${parts[2]}`;
+    }
+    return fullName;
+  }
+  
+  // Отображение выбранных авторов (чипсы)
+  function renderSelectedAuthors() {
+    const container = document.getElementById('selectedAuthorsList');
+    container.innerHTML = '';
+    
+    if (selectedAuthors.size === 0) {
+      container.innerHTML = '<div class="text-muted">Авторы не выбраны</div>';
+      return;
+    }
+    
+    selectedAuthors.forEach((author, id) => {
+      const chip = document.createElement('div');
+      chip.className = 'd-inline-flex align-items-center bg-success text-white rounded-pill px-3 py-1';
+      chip.innerHTML = `
+        <span>${author.formattedName}</span>
+        <button type="button" class="btn-close btn-close-white ms-2" 
+                onclick="removeAuthor(${id})" aria-label="Удалить"></button>
+      `;
+      container.appendChild(chip);
+    });
+  }
+  
+  // Отображение выбранных жанров (чипсы)
+  function renderSelectedGenres() {
+    const container = document.getElementById('selectedGenresList');
+    container.innerHTML = '';
+    
+    if (selectedGenres.size === 0) {
+      container.innerHTML = '<div class="text-muted">Жанры не выбраны</div>';
+      return;
+    }
+    
+    selectedGenres.forEach((genre, id) => {
+      const chip = document.createElement('div');
+      chip.className = 'd-inline-flex align-items-center bg-success text-white rounded-pill px-3 py-1';
+      chip.innerHTML = `
+        <span>${genre.name}</span>
+        <button type="button" class="btn-close btn-close-white ms-2" 
+                onclick="removeGenre(${id})" aria-label="Удалить"></button>
+      `;
+      container.appendChild(chip);
+    });
+  }
+  
+  // Удаление автора
+  window.removeAuthor = function(authorId) {
+    selectedAuthors.delete(authorId);
+    renderSelectedAuthors();
+    updateSelectedCounters();
+  };
+  
+  // Удаление жанра
+  window.removeGenre = function(genreId) {
+    selectedGenres.delete(genreId);
+    renderSelectedGenres();
+    updateSelectedCounters();
+  };
+  
+  // Обновление счетчиков
+  function updateSelectedCounters() {
+    document.getElementById('authorResultsCount').textContent = 
+      `Найдено: 0 | Выбрано: ${selectedAuthors.size}`;
+    document.getElementById('genreResultsCount').textContent = 
+      `Найдено: 0 | Выбрано: ${selectedGenres.size}`;
+  }
+  
+  // Инициализация поиска авторов
+  function initializeAuthorSearch() {
+    const searchInput = document.getElementById('authorSearch');
+    const clearButton = document.getElementById('clearAuthorSearch');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function(e) {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        searchAuthors(e.target.value);
+      }, 300);
+    });
+    
+    clearButton.addEventListener('click', function() {
+      searchInput.value = '';
+      searchAuthors('');
+    });
+    
+    // Загружаем первоначальный список
+    searchAuthors('');
+  }
+  
+  // Инициализация поиска жанров
+  function initializeGenreSearch() {
+    const searchInput = document.getElementById('genreSearch');
+    const clearButton = document.getElementById('clearGenreSearch');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function(e) {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        searchGenres(e.target.value);
+      }, 300);
+    });
+    
+    clearButton.addEventListener('click', function() {
+      searchInput.value = '';
+      searchGenres('');
+    });
+    
+    // Загружаем первоначальный список
+    searchGenres('');
+  }
+  
+  // Поиск авторов
+  async function searchAuthors(query) {
+    try {
+      const response = await fetch(`/edit/api/authors/search?q=${encodeURIComponent(query)}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        displayAuthorResults(result.authors);
+        document.getElementById('authorResultsCount').textContent = 
+          `Найдено: ${result.pagination.total} | Выбрано: ${selectedAuthors.size}`;
+      }
+    } catch (error) {
+      console.error('Ошибка при поиске авторов:', error);
+    }
+  }
+  
+  // Поиск жанров
+  async function searchGenres(query) {
+    try {
+      const response = await fetch(`/edit/api/genres/search?q=${encodeURIComponent(query)}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        displayGenreResults(result.genres);
+        document.getElementById('genreResultsCount').textContent = 
+          `Найдено: ${result.pagination.total} | Выбрано: ${selectedGenres.size}`;
+      }
+    } catch (error) {
+      console.error('Ошибка при поиске жанров:', error);
+    }
+  }
+  
+  // Отображение результатов поиска авторов
+  function displayAuthorResults(authors) {
+    const container = document.getElementById('authorSearchResults');
+    container.innerHTML = '';
+    
+    if (authors.length === 0) {
+      container.innerHTML = `
+        <div class="list-group-item text-center text-muted py-4">
+          Авторы не найдены
+        </div>
+      `;
+      return;
+    }
+    
+    authors.forEach(author => {
+      const isSelected = selectedAuthors.has(author.id);
+      const formattedName = formatAuthorName(author.name);
+      
+      const item = document.createElement('div');
+      item.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${isSelected ? 'bg-success bg-opacity-10' : ''}`;
+      item.innerHTML = `
+        <div>
+          <span class="fw-medium">${author.name}</span>
+          <br>
+          <small class="text-muted">${formattedName}</small>
+        </div>
+        <button type="button" class="btn btn-sm ${isSelected ? 'btn-success' : 'btn-outline-primary'}" 
+                onclick="toggleAuthor(${author.id}, '${author.name.replace(/'/g, "\\'")}')">
+          ${isSelected ? '✓ Выбрано' : 'Выбрать'}
+        </button>
+      `;
+      container.appendChild(item);
+    });
+  }
+  
+  // Отображение результатов поиска жанров
+  function displayGenreResults(genres) {
+    const container = document.getElementById('genreSearchResults');
+    container.innerHTML = '';
+    
+    if (genres.length === 0) {
+      container.innerHTML = `
+        <div class="list-group-item text-center text-muted py-4">
+          Жанры не найдены
+        </div>
+      `;
+      return;
+    }
+    
+    genres.forEach(genre => {
+      const isSelected = selectedGenres.has(genre.id);
+      
+      const item = document.createElement('div');
+      item.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center ${isSelected ? 'bg-success bg-opacity-10' : ''}`;
+      item.innerHTML = `
+        <span class="fw-medium">${genre.name}</span>
+        <button type="button" class="btn btn-sm ${isSelected ? 'btn-success' : 'btn-outline-primary'}" 
+                onclick="toggleGenre(${genre.id}, '${genre.name.replace(/'/g, "\\'")}')">
+          ${isSelected ? '✓ Выбрано' : 'Выбрать'}
+        </button>
+      `;
+      container.appendChild(item);
+    });
+  }
+  
+  // Переключение выбора автора
+  window.toggleAuthor = function(authorId, authorName) {
+    if (selectedAuthors.has(authorId)) {
+      selectedAuthors.delete(authorId);
+    } else {
+      selectedAuthors.set(authorId, {
+        id: authorId,
+        name: authorName,
+        formattedName: formatAuthorName(authorName)
+      });
+    }
+    
+    renderSelectedAuthors();
+    searchAuthors(document.getElementById('authorSearch').value);
+    updateSelectedCounters();
+  };
+  
+  // Переключение выбора жанра
+  window.toggleGenre = function(genreId, genreName) {
+    if (selectedGenres.has(genreId)) {
+      selectedGenres.delete(genreId);
+    } else {
+      selectedGenres.set(genreId, {
+        id: genreId,
+        name: genreName
+      });
+    }
+    
+    renderSelectedGenres();
+    searchGenres(document.getElementById('genreSearch').value);
+    updateSelectedCounters();
+  };
+  
+  // Настройка формы
+  function setupForm() {
+    const form = document.getElementById('bookForm');
+    
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      // Проверка обязательных полей
+      if (selectedAuthors.size === 0) {
+        showNotification('Выберите хотя бы одного автора', 'error');
+        return;
+      }
+      
+      if (selectedGenres.size === 0) {
+        showNotification('Выберите хотя бы один жанр', 'error');
+        return;
+      }
+      
+      // Собираем данные
+      const formData = {
+        title: document.getElementById('bookTitle').value,
+        summary: document.getElementById('bookSummary').value,
+        page_count: document.getElementById('bookPageCount').value,
+        quantity: document.getElementById('bookQuantity').value,
+        authorIds: Array.from(selectedAuthors.keys()),
+        genreIds: Array.from(selectedGenres.keys())
+      };
+      
+      const coverUrl = document.getElementById('bookCoverUrl').value.trim();
+      if (coverUrl) {
+        formData.cover_image_url = coverUrl;
+      }
+      
+      // Отправка данных
+      try {
+        const bookId = document.getElementById('bookId').value;
+        const url = bookId ? `/edit/books/${bookId}` : '/edit/books';
+        const method = bookId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showNotification(result.message, 'success');
+          
+          // Перенаправляем обратно к списку книг
+          setTimeout(() => {
+            window.location.href = '/edit/books';
+          }, 1500);
+        } else {
+          showNotification('Ошибка: ' + result.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification('Произошла ошибка при сохранении', 'error');
+      }
+    });
+  }
+</script>
+{{/section}}
