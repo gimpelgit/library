@@ -136,13 +136,13 @@
       const input = e.target;
       const datalist = document.getElementById('authors-list');
       
-      fetch(`/books/api/authors?q=${encodeURIComponent(input.value)}`)
+      fetch(`/api/authors/search?q=${encodeURIComponent(input.value)}`)
         .then(response => response.json())
         .then(authors => {
           datalist.innerHTML = '';
           authors.forEach(author => {
             const option = document.createElement('option');
-            option.value = author;
+            option.value = author.name;
             datalist.appendChild(option);
           });
         });

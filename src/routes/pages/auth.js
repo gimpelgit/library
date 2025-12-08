@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { pool } from "../config/database.js";
-import { hashPassword } from "../utils/hash.js";
+import { pool } from "../../config/database.js";
+import { hashPassword } from "../../utils/hash.js";
 
-export const authRouter = Router();
 
-authRouter.get("/", (req, res) => {
+export const pagesAuthRouter = Router();
+
+pagesAuthRouter.get("/", (req, res) => {
   if (req.session.user) {
     return res.redirect('/');
   }
@@ -18,7 +19,7 @@ authRouter.get("/", (req, res) => {
   });
 });
 
-authRouter.post("/register", async (req, res) => {
+pagesAuthRouter.post("/register", async (req, res) => {
   const title = 'Авторизация';
   
   try {
@@ -75,7 +76,7 @@ authRouter.post("/register", async (req, res) => {
   }
 });
 
-authRouter.post("/login", async (req, res) => {
+pagesAuthRouter.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const hashedPassword = hashPassword(password);
@@ -120,7 +121,7 @@ authRouter.post("/login", async (req, res) => {
   }
 });
 
-authRouter.post("/logout", (req, res) => {
+pagesAuthRouter.post("/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       console.error(err);

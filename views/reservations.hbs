@@ -90,7 +90,7 @@
     if (!currentReservationId) return;
     
     try {
-      const response = await fetch(`/reservations/cancel/${currentReservationId}`, {
+      const response = await fetch(`/api/reservations/cancel/${currentReservationId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

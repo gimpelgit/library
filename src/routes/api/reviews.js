@@ -1,10 +1,13 @@
 import { Router } from "express";
-import { pool } from "../config/database.js";
-import { requireAuth, requireReader } from "../middleware/auth.js";
+import { pool } from "../../config/database.js";
+import { requireAuth, requireReader } from "../../middleware/auth.js";
 
-export const reviewsRouter = Router();
-
-reviewsRouter.get("/api/can-review/:bookId", requireAuth, requireReader, async (req, res) => {
+export const apiReviewsRouter = Router();
+// reviews/api/can-review/:bookId
+// reviews/api/:bookId
+// reviews/api/:bookId
+// reviews/api/:reviewId
+apiReviewsRouter.get("/can-review/:bookId", requireAuth, requireReader, async (req, res) => {
   try {
     const bookId = req.params.bookId;
     const userId = req.session.user.id;
@@ -13,7 +16,7 @@ reviewsRouter.get("/api/can-review/:bookId", requireAuth, requireReader, async (
       SELECT COUNT(*) as count 
       FROM loans l
       JOIN loan_statuses ls ON l.status_id = ls.id
-      WHERE l.user_id = ? AND l.book_id = ? AND ls.name = 'on_loan'
+      WHERE l.user_id = ? AND l.book_id = ?
     `, [userId, bookId]);
 
     const hasLoaned = loans[0].count > 0;
@@ -41,7 +44,7 @@ reviewsRouter.get("/api/can-review/:bookId", requireAuth, requireReader, async (
   }
 });
 
-reviewsRouter.get("/api/:bookId", async (req, res) => {
+apiReviewsRouter.get("/books/:bookId", async (req, res) => {
   try {
     const bookId = req.params.bookId;
     const userId = req.session.user ? req.session.user.id : null;
@@ -94,7 +97,7 @@ reviewsRouter.get("/api/:bookId", async (req, res) => {
   }
 });
 
-reviewsRouter.post("/api/:bookId", requireAuth, requireReader, async (req, res) => {
+apiReviewsRouter.post("/books/:bookId", requireAuth, requireReader, async (req, res) => {
   try {
     const bookId = req.params.bookId;
     const userId = req.session.user.id;
@@ -104,7 +107,7 @@ reviewsRouter.post("/api/:bookId", requireAuth, requireReader, async (req, res) 
       SELECT COUNT(*) as count 
       FROM loans l
       JOIN loan_statuses ls ON l.status_id = ls.id
-      WHERE l.user_id = ? AND l.book_id = ? AND ls.name = 'on_loan'
+      WHERE l.user_id = ? AND l.book_id = ?
     `, [userId, bookId]);
 
     if (loans[0].count === 0) {
@@ -159,7 +162,7 @@ reviewsRouter.post("/api/:bookId", requireAuth, requireReader, async (req, res) 
   }
 });
 
-reviewsRouter.delete("/api/:reviewId", requireAuth, requireReader, async (req, res) => {
+apiReviewsRouter.delete("/:reviewId", requireAuth, requireReader, async (req, res) => {
   try {
     const reviewId = req.params.reviewId;
     const userId = req.session.user.id;

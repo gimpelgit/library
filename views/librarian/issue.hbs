@@ -224,7 +224,7 @@
       return;
     }
     
-    fetch(`/librarian/api/readers?q=${encodeURIComponent(query)}`)
+    fetch(`/api/readers?q=${encodeURIComponent(query)}`)
       .then(response => response.json())
       .then(readers => {
         resultsDiv.innerHTML = '';
@@ -297,7 +297,7 @@
     `;
     
     try {
-      const response = await fetch(`/reservations/api/readers/${selectedReader.id}`);
+      const response = await fetch(`/api/reservations/readers/${selectedReader.id}`);
       readerReservations = await response.json();
       
       if (readerReservations.length === 0) {
@@ -472,7 +472,7 @@
     const reservationIds = Array.from(selectedReservations.keys());
     
     try {
-      const response = await fetch('/librarian/issue', {
+      const response = await fetch('/api/issue', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { pool } from "../config/database.js";
+import { pool } from "../../config/database.js";
 
-export const booksRouter = Router();
+
+export const pagesBooksRouter = Router();
 
 // Главная страница с книгами
-booksRouter.get("/", async (req, res) => {
+pagesBooksRouter.get("/", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
@@ -108,7 +109,7 @@ booksRouter.get("/", async (req, res) => {
 });
 
 // Страница детального просмотра книги
-booksRouter.get("/:id", async (req, res) => {
+pagesBooksRouter.get("/:id", async (req, res) => {
   try {
     const bookId = req.params.id;
     
@@ -155,51 +156,5 @@ booksRouter.get("/:id", async (req, res) => {
       title: 'Ошибка',
       message: 'Произошла ошибка при загрузке книги'
     });
-  }
-});
-
-// API для автокомплита авторов
-booksRouter.get("/api/authors", async (req, res) => {
-  try {
-    const { q } = req.query;
-    let query = 'SELECT DISTINCT name FROM authors';
-    const params = [];
-    
-    if (q) {
-      query += ' WHERE name LIKE ?';
-      params.push(`%${q}%`);
-    }
-    
-    query += ' ORDER BY name LIMIT 10';
-    
-    const [authors] = await pool.execute(query, params);
-    res.json(authors.map(a => a.name));
-    
-  } catch (error) {
-    console.error(error);
-    res.status(500).json([]);
-  }
-});
-
-// API для автокомплита жанров
-booksRouter.get("/api/genres", async (req, res) => {
-  try {
-    const { q } = req.query;
-    let query = 'SELECT DISTINCT name FROM genres';
-    const params = [];
-    
-    if (q) {
-      query += ' WHERE name LIKE ?';
-      params.push(`%${q}%`);
-    }
-    
-    query += ' ORDER BY name LIMIT 10';
-    
-    const [genres] = await pool.execute(query, params);
-    res.json(genres.map(g => g.name));
-    
-  } catch (error) {
-    console.error(error);
-    res.status(500).json([]);
   }
 });

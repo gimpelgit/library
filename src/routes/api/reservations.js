@@ -1,57 +1,13 @@
 import { Router } from "express";
-import { pool } from "../config/database.js";
-import { requireAuth, requireLibrarian, requireReader } from "../middleware/auth.js";
-
-export const reservationsRouter = Router();
-
-reservationsRouter.use(requireAuth);
-
-// Страница с забронированными книгами
-reservationsRouter.get("/", requireReader, async (req, res) => {
-  try {
-    const userId = req.session.user.id;
-    
-    const [reservations] = await pool.execute(`
-      SELECT 
-        r.id,
-        r.reserved_until,
-        b.id as book_id,
-        b.title,
-        b.cover_image_url,
-        b.summary,
-        GROUP_CONCAT(DISTINCT a.name) as authors,
-        GROUP_CONCAT(DISTINCT g.name) as genres
-      FROM reservations r
-      JOIN books b ON r.book_id = b.id
-      LEFT JOIN books_authors ba ON b.id = ba.book_id
-      LEFT JOIN authors a ON ba.author_id = a.id
-      LEFT JOIN books_genres bg ON b.id = bg.book_id
-      LEFT JOIN genres g ON bg.genre_id = g.id
-      WHERE r.user_id = ?
-      GROUP BY r.id
-      ORDER BY r.reserved_until ASC
-    `, [userId]);
-    
-    res.render("reservations", {
-      user: req.session.user,
-      page: 'reservations',
-      title: 'Мои забронированные книги',
-      reservations,
-    });
-    
-  } catch (error) {
-    console.error(error);
-    res.status(500).render("error", {
-      user: req.session.user,
-      title: 'Ошибка',
-      message: 'Произошла ошибка при загрузке бронирований'
-    });
-  }
-});
+import { pool } from "../../config/database.js";
+import { requireAuth, requireLibrarian, requireReader } from "../../middleware/auth.js";
 
 
-// API для получения броней читателя
-reservationsRouter.get("/api/readers/:readerId", requireLibrarian, async (req, res) => {
+export const apiReservationsRouter = Router();
+
+apiReservationsRouter.use(requireAuth);
+
+apiReservationsRouter.get("/readers/:readerId", async (req, res) => {
   try {
     const { readerId } = req.params;
     
@@ -89,8 +45,7 @@ reservationsRouter.get("/api/readers/:readerId", requireLibrarian, async (req, r
   }
 });
 
-// API для бронирования книги
-reservationsRouter.post("/reserve", requireReader, async (req, res) => {
+apiReservationsRouter.post("/", requireReader, async (req, res) => {
   try {
     const { bookId } = req.body;
     const userId = req.session.user.id;
@@ -160,8 +115,7 @@ reservationsRouter.post("/reserve", requireReader, async (req, res) => {
   }
 });
 
-// API для отмены бронирования
-reservationsRouter.post("/cancel/:id", requireReader, async (req, res) => {
+apiReservationsRouter.post("/cancel/:id", requireReader, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.session.user.id;

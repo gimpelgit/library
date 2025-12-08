@@ -66,8 +66,8 @@
                 <input type="text" class="form-control" id="authorSearch" 
                        placeholder="Начните вводить имя автора...">
                 <button class="btn btn-outline-secondary" type="button" id="clearAuthorSearch">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor">
+                    <use xlink:href="/images/icons/ui/close.svg"></use>
                   </svg>
                 </button>
               </div>
@@ -112,8 +112,8 @@
                 <input type="text" class="form-control" id="genreSearch" 
                        placeholder="Начните вводить название жанра...">
                 <button class="btn btn-outline-secondary" type="button" id="clearGenreSearch">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor">
+                    <use xlink:href="/images/icons/ui/close.svg"></use>
                   </svg>
                 </button>
               </div>
@@ -191,7 +191,7 @@
   // Загрузка выбранных авторов
   async function loadSelectedAuthors(authorIds) {
     try {
-      const response = await fetch(`/edit/api/authors/search?limit=100`);
+      const response = await fetch(`/api/authors/search?limit=100`);
       const result = await response.json();
       
       if (result.success) {
@@ -214,7 +214,7 @@
   // Загрузка выбранных жанров
   async function loadSelectedGenres(genreIds) {
     try {
-      const response = await fetch(`/edit/api/genres/search?limit=100`);
+      const response = await fetch(`/api/genres/search?limit=100`);
       const result = await response.json();
       
       if (result.success) {
@@ -355,7 +355,7 @@
   // Поиск авторов
   async function searchAuthors(query) {
     try {
-      const response = await fetch(`/edit/api/authors/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/authors/search?q=${encodeURIComponent(query)}`);
       const result = await response.json();
       
       if (result.success) {
@@ -371,7 +371,7 @@
   // Поиск жанров
   async function searchGenres(query) {
     try {
-      const response = await fetch(`/edit/api/genres/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`/api/genres/search?q=${encodeURIComponent(query)}`);
       const result = await response.json();
       
       if (result.success) {
@@ -518,7 +518,7 @@
       // Отправка данных
       try {
         const bookId = document.getElementById('bookId').value;
-        const url = bookId ? `/edit/books/${bookId}` : '/edit/books';
+        const url = bookId ? `/api/books/${bookId}` : '/api/books';
         const method = bookId ? 'PUT' : 'POST';
         
         const response = await fetch(url, {
