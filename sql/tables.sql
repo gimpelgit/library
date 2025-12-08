@@ -127,3 +127,5 @@ CREATE TABLE reviews (
 
 -- Индексы 
 CREATE INDEX idx_books_title ON books(title);
+CREATE INDEX idx_loans_user_book ON loans(user_id, book_id);
+CREATE INDEX idx_reviews_user_book ON reviews(user_id, book_id);

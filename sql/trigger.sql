@@ -4,7 +4,7 @@ DROP TRIGGER IF EXISTS decrease_quantity_on_reservation;
 DROP TRIGGER IF EXISTS increase_quantity_on_reservation_delete;
 DROP TRIGGER IF EXISTS handle_reservation_on_loan;
 DROP TRIGGER IF EXISTS increase_quantity_on_loan_return;
-
+DROP TRIGGER IF EXISTS prevent_duplicate_reviews;
 
 DELIMITER //
 
@@ -52,6 +52,23 @@ BEGIN
         UPDATE books
         SET quantity = quantity + 1
         WHERE id = NEW.book_id;
+    END IF;
+END //
+
+
+CREATE TRIGGER prevent_duplicate_reviews
+BEFORE INSERT ON reviews
+FOR EACH ROW
+BEGIN
+    DECLARE existing_count INT;
+    
+    SELECT COUNT(*) INTO existing_count
+    FROM reviews
+    WHERE user_id = NEW.user_id AND book_id = NEW.book_id;
+    
+    IF existing_count > 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Пользователь уже оставил отзыв на эту книгу';
     END IF;
 END //
 

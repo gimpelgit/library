@@ -54,10 +54,484 @@
       </div>
     </div>
   </div>
+
+  <!-- Секция отзывов -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h3 class="card-title text-primary mb-4">
+        Отзывы читателей
+        <span class="badge bg-secondary ms-2" id="totalReviewsCount">0</span>
+      </h3>
+      
+      <!-- Общая статистика отзывов -->
+      <div class="row mb-4">
+        <div class="col-md-4 text-center">
+          <div class="display-4 text-warning" id="averageRating">0.0</div>
+          <div class="text-muted">Средняя оценка</div>
+        </div>
+        <div class="col-md-8">
+          <div id="ratingDistribution">
+            <!-- Распределение оценок будет загружено здесь -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Форма отзыва (только для читателей, которые получали книгу) -->
+      <div id="reviewFormContainer" style="display: none;">
+        <h5 class="text-primary mb-3">Ваш отзыв</h5>
+        <form id="reviewForm">
+          <input type="hidden" id="reviewId">
+          
+          <div class="mb-3">
+            <label class="form-label">Оценка:</label>
+            <div class="rating-stars mb-2" id="ratingStars">
+              {{#each (range 1 5)}}
+                <button type="button" class="btn btn-outline-warning btn-star" data-value="{{this}}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/>
+                  </svg>
+                </button>
+              {{/each}}
+            </div>
+            <small class="text-muted">Выберите от 1 до 5 звезд</small>
+            <div class="invalid-feedback" id="ratingError"></div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="comment" class="form-label">Комментарий:</label>
+            <textarea class="form-control" id="comment" rows="3" 
+                      placeholder="Поделитесь вашим мнением о книге..." required></textarea>
+            <div class="invalid-feedback" id="commentError"></div>
+          </div>
+          
+          <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-primary" id="submitReviewBtn">Отправить отзыв</button>
+            <button type="button" class="btn btn-danger" id="deleteReviewBtn" style="display: none;">
+              Удалить отзыв
+            </button>
+          </div>
+        </form>
+      </div>
+      
+      <div id="cannotReviewMessage" class="alert alert-info mt-3" style="display: none;">
+        <p class="mb-0">Вы можете оставлять отзывы только на книги, которые получили в библиотеке.</p>
+      </div>
+      
+      <div id="loginToReviewMessage" class="alert alert-warning mt-3" style="display: none;">
+        <p class="mb-0">
+          <a href="/auth" class="alert-link">Войдите как читатель</a>, чтобы оставить отзыв на эту книгу.
+        </p>
+      </div>
+      
+      <hr class="my-4">
+      
+      <!-- Список отзывов -->
+      <div id="reviewsList">
+        <div class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+          </div>
+          <p class="mt-2 text-muted">Загрузка отзывов...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно подтверждения удаления отзыва -->
+  <div class="modal fade" id="deleteReviewModal" tabindex="-1" aria-labelledby="deleteReviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger" id="deleteReviewModalLabel">Удаление отзыва</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p>Вы действительно хотите удалить свой отзыв на книгу?</p>
+          <div class="p-3 bg-light rounded">
+            <p class="mb-1"><strong>Книга:</strong> {{book.title}}</p>
+            <p class="mb-0 text-danger">
+              <small>Отзыв будет удален без возможности восстановления.</small>
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteReviewBtn">Удалить отзыв</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 {{#section 'scripts'}}
 <script>
+  const bookId = {{book.id}};
+  let selectedRating = 0;
+  let currentReviewId = null;
+  
+  document.addEventListener('DOMContentLoaded', async function() {
+    await initReviewSystem();
+  });
+  
+  async function initReviewSystem() {
+    await checkCanReview();
+    await loadReviews();
+    setupEventListeners();
+  }
+  
+  async function checkCanReview() {
+    try {
+      const response = await fetch(`/reviews/api/can-review/${bookId}`, {
+        credentials: 'include'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        if (result.canReview) {
+          showReviewForm(result.hasReview, result.reviewId);
+        } else {
+          showCannotReviewMessage();
+        }
+      }
+    } catch (error) {
+      console.error('Error checking review permission:', error);
+    }
+  }
+  
+  function showReviewForm(hasReview, reviewId) {
+    const container = document.getElementById('reviewFormContainer');
+    const loginMessage = document.getElementById('loginToReviewMessage');
+    const cannotReviewMessage = document.getElementById('cannotReviewMessage');
+    
+    container.style.display = 'block';
+    loginMessage.style.display = 'none';
+    cannotReviewMessage.style.display = 'none';
+    
+    if (hasReview && reviewId) {
+      currentReviewId = reviewId;
+      document.getElementById('deleteReviewBtn').style.display = 'block';
+      loadExistingReview(reviewId);
+    }
+  }
+  
+  function showCannotReviewMessage() {
+    const container = document.getElementById('reviewFormContainer');
+    const cannotReviewMessage = document.getElementById('cannotReviewMessage');
+    const loginMessage = document.getElementById('loginToReviewMessage');
+    
+    container.style.display = 'none';
+    
+    if (!{{#if user}}true{{else}}false{{/if}}) {
+      loginMessage.style.display = 'block';
+    } else if ({{#if user}}{{#if (eq user.role_name 'reader')}}true{{else}}false{{/if}}{{else}}false{{/if}}) {
+      cannotReviewMessage.style.display = 'block';
+    }
+  }
+  
+  async function loadExistingReview(reviewId) {
+    try {
+      const response = await fetch(`/reviews/api/${bookId}`, {
+        credentials: 'include'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        const ownReview = result.reviews.find(r => r.is_own_review);
+        if (ownReview) {
+          selectedRating = ownReview.rating;
+          updateRatingStars();
+          document.getElementById('comment').value = ownReview.comment;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading existing review:', error);
+    }
+  }
+  
+  function setupEventListeners() {
+    // Обработка звезд рейтинга
+    document.querySelectorAll('.btn-star').forEach(star => {
+      star.addEventListener('click', function() {
+        selectedRating = parseInt(this.dataset.value);
+        updateRatingStars();
+      });
+      
+      star.addEventListener('mouseenter', function() {
+        const value = parseInt(this.dataset.value);
+        highlightStars(value);
+      });
+      
+      star.addEventListener('mouseleave', function() {
+        updateRatingStars();
+      });
+    });
+    
+    // Отправка формы
+    document.getElementById('reviewForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const comment = document.getElementById('comment').value.trim();
+      let isValid = true;
+      
+      // Валидация
+      if (selectedRating === 0) {
+        document.getElementById('ratingError').textContent = 'Выберите оценку';
+        document.getElementById('ratingStars').classList.add('is-invalid');
+        isValid = false;
+      } else {
+        document.getElementById('ratingError').textContent = '';
+        document.getElementById('ratingStars').classList.remove('is-invalid');
+      }
+      
+      if (!comment) {
+        document.getElementById('commentError').textContent = 'Введите комментарий';
+        document.getElementById('comment').classList.add('is-invalid');
+        isValid = false;
+      } else {
+        document.getElementById('commentError').textContent = '';
+        document.getElementById('comment').classList.remove('is-invalid');
+      }
+      
+      if (!isValid) return;
+      
+      // Отправка отзыва
+      await submitReview(selectedRating, comment);
+    });
+    
+    // Удаление отзыва - показ модального окна
+    document.getElementById('deleteReviewBtn').addEventListener('click', function() {
+      openDeleteReviewModal();
+    });
+    
+    // Подтверждение удаления в модальном окне
+    document.getElementById('confirmDeleteReviewBtn').addEventListener('click', async function() {
+      const modal = bootstrap.Modal.getInstance(document.getElementById('deleteReviewModal'));
+      modal.hide();
+      await deleteReview();
+    });
+  }
+  
+  function openDeleteReviewModal() {
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteReviewModal'));
+    deleteModal.show();
+  }
+  
+  function highlightStars(count) {
+    document.querySelectorAll('.btn-star').forEach((star, index) => {
+      if (index < count) {
+        star.classList.remove('btn-outline-warning');
+        star.classList.add('btn-warning');
+      } else {
+        star.classList.remove('btn-warning');
+        star.classList.add('btn-outline-warning');
+      }
+    });
+  }
+  
+  function updateRatingStars() {
+    highlightStars(selectedRating);
+  }
+  
+  async function submitReview(rating, comment) {
+    const submitBtn = document.getElementById('submitReviewBtn');
+    const originalText = submitBtn.innerHTML;
+    
+    try {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Отправка...';
+      
+      const response = await fetch(`/reviews/api/${bookId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          rating: rating,
+          comment: comment,
+          reviewId: currentReviewId
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showNotification(result.message, 'success');
+        
+        if (result.reviewId) {
+          currentReviewId = result.reviewId;
+          document.getElementById('deleteReviewBtn').style.display = 'block';
+        }
+        
+        // Обновляем список отзывов
+        await loadReviews();
+        
+        // Сбрасываем форму
+        if (!currentReviewId) {
+          selectedRating = 0;
+          updateRatingStars();
+          document.getElementById('comment').value = '';
+        }
+      } else {
+        showNotification('Ошибка: ' + result.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Произошла ошибка при отправке отзыва', 'error');
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+    }
+  }
+  
+  async function deleteReview() {
+    if (!currentReviewId) return;
+    
+    const deleteBtn = document.getElementById('deleteReviewBtn');
+    const originalText = deleteBtn.innerHTML;
+    
+    try {
+      deleteBtn.disabled = true;
+      deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Удаление...';
+      
+      const response = await fetch(`/reviews/api/${currentReviewId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        showNotification(result.message, 'success');
+        
+        // Сбрасываем форму
+        currentReviewId = null;
+        selectedRating = 0;
+        updateRatingStars();
+        document.getElementById('comment').value = '';
+        document.getElementById('deleteReviewBtn').style.display = 'none';
+        
+        // Обновляем список отзывов
+        await loadReviews();
+      } else {
+        showNotification('Ошибка: ' + result.message, 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Произошла ошибка при удалении отзыва', 'error');
+    } finally {
+      deleteBtn.disabled = false;
+      deleteBtn.innerHTML = originalText;
+    }
+  }
+  
+  async function loadReviews() {
+    try {
+      const response = await fetch(`/reviews/api/${bookId}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        updateReviewStats(result);
+        renderReviews(result.reviews);
+      }
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+      document.getElementById('reviewsList').innerHTML = `
+        <div class="alert alert-danger">
+          Произошла ошибка при загрузке отзывов
+        </div>
+      `;
+    }
+  }
+  
+  function updateReviewStats(data) {
+    document.getElementById('totalReviewsCount').textContent = data.totalReviews;
+    document.getElementById('averageRating').textContent = data.averageRating;
+    
+    // Обновляем распределение оценок
+    const distributionDiv = document.getElementById('ratingDistribution');
+    distributionDiv.innerHTML = '';
+    
+    [5, 4, 3, 2, 1].forEach(rating => {
+      const count = data.ratingDistribution[rating];
+      const percentage = data.totalReviews > 0 ? (count / data.totalReviews * 100) : 0;
+      
+      const row = document.createElement('div');
+      row.className = 'row align-items-center mb-2';
+      row.innerHTML = `
+        <div class="col-2">
+          <span class="badge bg-warning">${rating} ★</span>
+        </div>
+        <div class="col-8">
+          <div class="progress" style="height: 20px;">
+            <div class="progress-bar bg-warning" role="progressbar" 
+                 style="width: ${percentage}%" 
+                 aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100">
+            </div>
+          </div>
+        </div>
+        <div class="col-2 text-end">
+          <small class="text-muted">${count}</small>
+        </div>
+      `;
+      distributionDiv.appendChild(row);
+    });
+  }
+  
+  function renderReviews(reviews) {
+    const container = document.getElementById('reviewsList');
+    
+    if (reviews.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-4">
+          <p class="text-muted">Пока нет отзывов на эту книгу. Будьте первым!</p>
+        </div>
+      `;
+      return;
+    }
+    
+    container.innerHTML = '';
+    
+    reviews.forEach(review => {
+      const reviewElement = document.createElement('div');
+      reviewElement.className = 'border-bottom pb-3 mb-3';
+      
+      // Создаем звезды для отображения рейтинга
+      const starsHtml = Array(5).fill().map((_, i) => {
+        if (i < review.rating) {
+          return '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#FFD700" viewBox="0 0 16 16"><path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/></svg>';
+        } else {
+          return '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#ddd" viewBox="0 0 16 16"><path d="M3.612 15.443c-.386.198-.824-.149-.746-.592l.83-4.73L.173 6.765c-.329-.314-.158-.888.283-.95l4.898-.696L7.538.792c.197-.39.73-.39.927 0l2.184 4.327 4.898.696c.441.062.612.636.282.95l-3.522 3.356.83 4.73c.078.443-.36.79-.746.592L8 13.187l-4.389 2.256z"/></svg>';
+        }
+      }).join('');
+      
+      reviewElement.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <strong>${review.user_name}</strong>
+            ${review.is_own_review ? '<span class="badge bg-info ms-2">Ваш отзыв</span>' : ''}
+          </div>
+          <small class="text-muted">${review.review_date_formatted}</small>
+        </div>
+        <div class="mb-2">
+          ${starsHtml}
+          <span class="ms-2">${review.rating} из 5</span>
+        </div>
+        <p class="mb-0">${escapeHtml(review.comment)}</p>
+      `;
+      
+      container.appendChild(reviewElement);
+    });
+  }
+  
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   async function reserveBook(bookId) {
     try {
       const button = event.target;

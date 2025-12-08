@@ -37,10 +37,6 @@
           <p class="mt-2 text-muted">Загрузка броней...</p>
         </div>
       </div>
-      <div id="selectedReservations" style="display: none;">
-        <h6 class="mb-3">Выбранные брони для выдачи:</h6>
-        <div id="selectedReservationsList" class="mb-3"></div>
-      </div>
     </div>
   </div>
 
@@ -361,9 +357,6 @@
       `;
       reservationsList.appendChild(div);
     });
-    
-    document.getElementById('selectedReservations').style.display = 
-      selectedReservations.size > 0 ? 'block' : 'none';
   }
 
   function toggleReservation(reservationId, bookId, title, authors) {
